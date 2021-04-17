@@ -1,15 +1,16 @@
 import * as p5 from "p5";
 import Grid from "./Grid";
-import { cellState } from "./Cell";
+import { CellState } from "./Cell";
 
 let GRID: Grid;
-const CELL_SIZE = 5;
+const CELL_SIZE = 3;
 let CELL_COUNT_X: number;
 
 const sketch = (p: p5) => {
   p.setup = () => {
     CELL_COUNT_X = Math.ceil(p.windowWidth / CELL_SIZE);
     GRID = new Grid(p.windowWidth, p.windowHeight, CELL_SIZE);
+
     p.createCanvas(p.windowWidth, p.windowHeight);
     p.frameRate(60);
   };
@@ -17,16 +18,21 @@ const sketch = (p: p5) => {
   p.draw = () => {
     p.background(0);
 
+    const fps = p.frameRate();
+    p.fill(255);
+    p.stroke(0);
+    p.text("FPS: " + fps.toFixed(2), 5, 12);
+
     for (const cell of GRID.cells) {
       switch (cell.state) {
-        case cellState.Empty:
-          p.noFill();
+        case CellState.Sand:
+          p.fill(98 + cell.v, 78 + cell.v, 33 + cell.v);
           break;
-        case cellState.Sand:
-          p.fill(98, 78, 33);
+        case CellState.Stone:
+          p.fill(59 + cell.v, 59 + cell.v, 57 + cell.v);
           break;
-        case cellState.Stone:
-          p.fill(59, 59, 57);
+        case CellState.Water:
+          p.fill(75 + cell.v, 138 + cell.v, 174 + cell.v);
           break;
         default:
           break;
@@ -34,7 +40,7 @@ const sketch = (p: p5) => {
 
       p.noStroke();
 
-      p.rect(cell.windowX, cell.windowY, CELL_SIZE, CELL_SIZE);
+      if (cell.state !== CellState.Empty) p.rect(cell.windowX, cell.windowY, CELL_SIZE, CELL_SIZE);
     }
   };
 
@@ -43,27 +49,38 @@ const sketch = (p: p5) => {
     const y = Math.floor(e.pageY / CELL_SIZE);
     const i = x + CELL_COUNT_X * y;
 
-    let state: cellState;
+    let state: CellState;
     if (p.keyIsPressed && p.key === " ") {
-      state = cellState.Stone;
+      state = CellState.Stone;
     } else {
-      state = cellState.Sand;
+      state = CellState.Sand;
     }
 
-    if (p.keyIsPressed && p.key === "Shift") {
-      GRID.makeCircle(x, y, 10, state);
-    } else {
-      GRID.cells[i].state = state;
+    const brushSize = Math.floor(p.windowWidth / 40 / CELL_SIZE);
+    if (p.keyIsPressed) {
+      if (p.key === " ") GRID.makeCircle(x, y, brushSize, state);
+      else if (p.key === "e") GRID.makeCircle(x, y, brushSize, CellState.Empty);
+      else if (p.key === "w") GRID.makeCircle(x, y, brushSize, CellState.Water);
+    } else if (GRID.cells[i] !== undefined) {
+      GRID.makeCircle(x, y, brushSize, state);
     }
   };
 
   p.mouseDragged = p.mouseClicked;
 };
 
-// update loop
+// main update loop
 setInterval(async () => {
   if (GRID === undefined) return;
+
+  // update velocity
+  for (const cell of GRID.cells) {
+    if (cell.state !== CellState.Empty && cell.state !== CellState.Stone && !cell.stopped)
+      cell.velocity += 0.3;
+    else cell.velocity = 1;
+  }
+
   GRID.update();
-}, 20);
+}, 100);
 
 new p5(sketch);
