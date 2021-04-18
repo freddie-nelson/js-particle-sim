@@ -12,7 +12,7 @@ const sketch = (p: p5) => {
     GRID = new Grid(p.windowWidth, p.windowHeight, CELL_SIZE);
 
     p.createCanvas(p.windowWidth, p.windowHeight);
-    p.frameRate(60);
+    p.frameRate(30);
   };
 
   p.draw = () => {
@@ -76,7 +76,7 @@ setInterval(async () => {
   // update velocity
   for (const cell of GRID.cells) {
     if (cell.state !== CellState.Empty && cell.state !== CellState.Stone && !cell.stopped)
-      cell.velocity += 0.3;
+      cell.velocity += 0.5 * (Math.abs(cell.v) / 3);
     else cell.velocity = 1;
   }
 

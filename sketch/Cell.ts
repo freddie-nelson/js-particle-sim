@@ -30,6 +30,8 @@ export default class Cell {
   }
 
   canPass(pass: Cell): boolean {
+    if (pass === undefined) return false;
+
     switch (this.state) {
       case CellState.Sand:
         return (

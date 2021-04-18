@@ -19,62 +19,48 @@ export default class Grid {
   }
 
   update() {
-    for (let i = this.cells.length - 1; i >= 0; i--) {
-      const cell = this.cells[i];
+    // go along each row from rtl and ltr
+    for (const direction of [0, 1]) {
+      for (let y = this.CELL_COUNT_Y - 1; y >= 0; y--) {
+        for (let x = 0; x < this.CELL_COUNT_X; x++) {
+          const cell = this.getCell(direction === 0 ? x : this.CELL_COUNT_X - x - 1, y);
 
-      // simulate particles
-      switch (cell.state) {
-        case CellState.Sand:
-          this.calculateNextPosition(cell);
-          break;
-        case CellState.Water:
-          this.calculateNextPosition(cell);
-          break;
-        case CellState.Gas:
-          this.calculateNextPosition(cell, -1);
-        default:
-          break;
-      }
-    }
-
-    // spread water
-    for (let i = this.cells.length - 1; i >= 0; i--) {
-      const cell = this.cells[i];
-
-      if (cell.stopped && cell.state === CellState.Water) {
-        let current: Cell;
-        for (let i = 10; i > 0; i--) {
-          if (cell.x - i - 1 >= 0 && this.getCell(cell.x - i - 1, cell.y).state === CellState.Empty) {
-            current = this.getCell(cell.x - i - 1, cell.y);
-          } else if (
-            cell.x + i + 1 < this.CELL_COUNT_X &&
-            this.getCell(cell.x + i + 1, cell.y).state === CellState.Empty
-          ) {
-            current = this.getCell(cell.x + i + 1, cell.y);
+          // simulate particles
+          switch (cell.state) {
+            case CellState.Sand:
+              this.calculateNextPosition(cell);
+              break;
+            case CellState.Water:
+              this.calculateNextPosition(cell);
+              if (cell.stopped) {
+                this.calculateNextPosition(cell, 0, 10);
+              }
+              break;
+            case CellState.Gas:
+              this.calculateNextPosition(cell, -1);
+            default:
+              break;
           }
-
-          if (current === undefined || current.state !== CellState.Empty) break;
-
-          this.swapCells(cell, current);
-          this.calculateNextPosition(cell);
         }
       }
     }
   }
 
-  calculateNextPosition(cell: Cell, yOffset: number = 1) {
+  calculateNextPosition(cell: Cell, yOffset: number = 1, additionalVelocity: number = 0) {
     let last = cell;
     const currentV = cell.velocity;
 
-    for (let i = 1; i < currentV + 1; i++) {
+    for (let i = 0; i < currentV + additionalVelocity; i++) {
       // calculate xOffset
       let xOffset;
       if (last.y + yOffset >= this.CELL_COUNT_Y) break;
       else if (cell.canPass(this.getCell(last.x, last.y + yOffset))) {
         xOffset = 0;
       } else if (last.x + 1 < this.CELL_COUNT_X && last.canPass(this.getCell(last.x + 1, last.y + yOffset))) {
+        // move to right
         xOffset = 1;
       } else if (last.x - 1 >= 0 && last.canPass(this.getCell(last.x - 1, last.y + yOffset))) {
+        // move to left
         xOffset = -1;
       }
 
