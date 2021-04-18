@@ -5,6 +5,7 @@ export default class Grid {
   CELL_COUNT_Y: number;
 
   cells: Cell[] = [];
+  // changed: boolean[] = [];
 
   constructor(width: number, height: number, cellSize: number) {
     const xCellsNum = Math.ceil(width / cellSize);
@@ -14,7 +15,8 @@ export default class Grid {
     this.CELL_COUNT_Y = yCellsNum;
 
     for (let i = 0; i < xCellsNum * yCellsNum; i++) {
-      this.cells[i] = new Cell(i % xCellsNum, Math.floor(i / xCellsNum), cellSize);
+      this.cells[i] = new Cell(i % xCellsNum, Math.floor(i / xCellsNum));
+      // this.changed[i] = false;
     }
   }
 
@@ -28,7 +30,11 @@ export default class Grid {
           // simulate particles
           switch (cell.state) {
             case CellState.Sand:
+              const start = Date.now();
               this.calculateNextPosition(cell);
+              if (Date.now() - start >= 10) {
+                console.log(`X: ${cell.x}, Y: ${cell.y}, I: ${cell.x + this.CELL_COUNT_X * cell.y}`);
+              }
               break;
             case CellState.Water:
               this.calculateNextPosition(cell, true);
@@ -86,6 +92,8 @@ export default class Grid {
 
       cell.stopped = true;
     } else {
+      // this.changed[this.getCellIndex(cell)] = true;
+      // this.changed[this.getCellIndex(last)] = true;
       this.swapCells(cell, last);
     }
   }
@@ -101,24 +109,18 @@ export default class Grid {
   emptyCell(cell: Cell, state: CellState = CellState.Empty) {
     cell.state = state;
     cell.velocity = 0;
-    cell.lastX = -1;
-    cell.lastY = -1;
     cell.stopped = false;
   }
 
-  fillCell(cell: Cell, data: { state: number; velocity: number; lastX: number; lastY: number }) {
+  fillCell(cell: Cell, data: { state: number; velocity: number }) {
     cell.state = data.state;
     cell.velocity = data.velocity;
-    cell.lastX = data.lastX;
-    cell.lastY = data.lastY;
   }
 
   swapCells(cell: Cell, swap: Cell) {
     const data = {
       state: cell.state,
       velocity: cell.velocity,
-      lastX: cell.x,
-      lastY: cell.y,
     };
 
     this.emptyCell(cell, swap.state);
@@ -141,7 +143,10 @@ export default class Grid {
             this.getCell(xSym, ySym),
           ];
           for (const cell of cells) {
-            if (cell !== undefined) cell.state = state;
+            if (cell !== undefined) {
+              cell.state = state;
+              // this.changed[this.getCellIndex(cell)] = true;
+            }
           }
         }
       }

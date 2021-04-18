@@ -1,12 +1,10 @@
 {
   "compilerOptions": {
-    "mapRoot": "./sketch/",
-    "module": "es6",
+    "module": "CommonJS",
     "noImplicitAny": true,
     "outDir": "./build",
-    "rootDir": "./sketch/",
     "sourceMap": true,
-    "sourceRoot": "./sketch/",
-    "target": "es6"
+    "target": "es6",
+    "moduleResolution": "node"
   }
 }
