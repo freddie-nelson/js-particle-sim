@@ -3,7 +3,7 @@ import Grid from "./Grid";
 import { CellState } from "./Cell";
 
 let GRID: Grid;
-const CELL_SIZE = 3;
+const CELL_SIZE = 6;
 let CELL_COUNT_X: number;
 
 const sketch = (p: p5) => {

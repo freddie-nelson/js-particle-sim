@@ -97,6 +97,7 @@ export default class Grid {
     cell.velocity = 0;
     cell.lastX = -1;
     cell.lastY = -1;
+    cell.stopped = false;
   }
 
   fillCell(cell: Cell, data: { state: number; velocity: number; lastX: number; lastY: number }) {
