@@ -35,10 +35,16 @@ export default class Cell {
     switch (this.state) {
       case CellState.Sand:
         return (
-          pass.state === CellState.Empty || pass.state === CellState.Water || pass.state === CellState.Gas
+          pass.state === CellState.Empty ||
+          (pass.state === CellState.Water && Math.random() > 0.2) ||
+          pass.state === CellState.Gas
         );
       case CellState.Water:
         return pass.state === CellState.Empty || pass.state === CellState.Gas;
+      case CellState.Gas:
+        return (
+          pass.state === CellState.Empty || pass.state === CellState.Sand || pass.state === CellState.Water
+        );
       default:
         return false;
     }

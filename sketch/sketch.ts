@@ -3,7 +3,7 @@ import Grid from "./Grid";
 import { CellState } from "./Cell";
 
 let GRID: Grid;
-const CELL_SIZE = 6;
+const CELL_SIZE = 3;
 let CELL_COUNT_X: number;
 
 const sketch = (p: p5) => {
@@ -34,6 +34,9 @@ const sketch = (p: p5) => {
         case CellState.Water:
           p.fill(75 + cell.v, 138 + cell.v, 174 + cell.v);
           break;
+        case CellState.Gas:
+          p.fill(89 + cell.v, 89 + cell.v, 87 + cell.v);
+          break;
         default:
           break;
       }
@@ -50,18 +53,27 @@ const sketch = (p: p5) => {
     const i = x + CELL_COUNT_X * y;
 
     let state: CellState;
-    if (p.keyIsPressed && p.key === " ") {
-      state = CellState.Stone;
-    } else {
-      state = CellState.Sand;
+    if (p.keyIsPressed) {
+      switch (p.key) {
+        case "s":
+          state = CellState.Stone;
+          break;
+        case "e":
+          state = CellState.Empty;
+          break;
+        case "w":
+          state = CellState.Water;
+          break;
+        case "g":
+          state = CellState.Gas;
+          break;
+      }
     }
 
+    if (state === undefined) state = CellState.Sand;
+
     const brushSize = Math.floor(p.windowWidth / 40 / CELL_SIZE);
-    if (p.keyIsPressed) {
-      if (p.key === " ") GRID.makeCircle(x, y, brushSize, state);
-      else if (p.key === "e") GRID.makeCircle(x, y, brushSize, CellState.Empty);
-      else if (p.key === "w") GRID.makeCircle(x, y, brushSize, CellState.Water);
-    } else if (GRID.cells[i] !== undefined) {
+    if (GRID.cells[i] !== undefined) {
       GRID.makeCircle(x, y, brushSize, state);
     }
   };
@@ -70,17 +82,17 @@ const sketch = (p: p5) => {
 };
 
 // main update loop
-setInterval(async () => {
+setInterval(() => {
   if (GRID === undefined) return;
 
   // update velocity
   for (const cell of GRID.cells) {
     if (cell.state !== CellState.Empty && cell.state !== CellState.Stone && !cell.stopped)
-      cell.velocity += 0.5 * (Math.abs(cell.v) / 3);
+      cell.velocity += 1 * (Math.abs(cell.v) / 3);
     else cell.velocity = 1;
   }
 
   GRID.update();
-}, 100);
+}, 10);
 
 new p5(sketch);

@@ -31,13 +31,11 @@ export default class Grid {
               this.calculateNextPosition(cell);
               break;
             case CellState.Water:
-              this.calculateNextPosition(cell);
-              if (cell.stopped) {
-                this.calculateNextPosition(cell, 0, 10);
-              }
+              this.calculateNextPosition(cell, true);
               break;
             case CellState.Gas:
-              this.calculateNextPosition(cell, -1);
+              this.calculateNextPosition(cell, false, -1);
+              break;
             default:
               break;
           }
@@ -46,14 +44,14 @@ export default class Grid {
     }
   }
 
-  calculateNextPosition(cell: Cell, yOffset: number = 1, additionalVelocity: number = 0) {
+  calculateNextPosition(cell: Cell, spread: boolean = false, yOffset: number = 1) {
     let last = cell;
     const currentV = cell.velocity;
 
-    for (let i = 0; i < currentV + additionalVelocity; i++) {
+    for (let i = 0; i < currentV; i++) {
       // calculate xOffset
       let xOffset;
-      if (last.y + yOffset >= this.CELL_COUNT_Y) break;
+      if (last.y + yOffset < 0 || last.y + yOffset >= this.CELL_COUNT_Y) break;
       else if (cell.canPass(this.getCell(last.x, last.y + yOffset))) {
         xOffset = 0;
       } else if (last.x + 1 < this.CELL_COUNT_X && last.canPass(this.getCell(last.x + 1, last.y + yOffset))) {
@@ -62,6 +60,13 @@ export default class Grid {
       } else if (last.x - 1 >= 0 && last.canPass(this.getCell(last.x - 1, last.y + yOffset))) {
         // move to left
         xOffset = -1;
+      } else if (spread) {
+        yOffset = 0;
+        if (last.x + 1 < this.CELL_COUNT_X && last.canPass(this.getCell(last.x + 1, last.y))) {
+          xOffset = 1;
+        } else if (last.x - 1 >= 0 && last.canPass(this.getCell(last.x - 1, last.y))) {
+          xOffset = -1;
+        }
       }
 
       // pick current
@@ -70,6 +75,7 @@ export default class Grid {
       if (current === undefined || !cell.canPass(current)) {
         break;
       }
+
       last = current;
     }
 
