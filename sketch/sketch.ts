@@ -1,108 +1,88 @@
-import { Application, Graphics, autoDetectRenderer } from "pixi.js";
+const c = document.getElementById("canvas") as HTMLCanvasElement;
+const ctx = c.getContext("2d");
 
-const app = new Application({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  resolution: devicePixelRatio,
-  antialias: false,
-});
-
-app.ticker.maxFPS = 60;
-
-app.renderer = autoDetectRenderer({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  resolution: devicePixelRatio,
-  antialias: false,
-});
+c.width = window.innerWidth;
+c.height = window.innerHeight;
 
 // make canvas always fullscreen
 window.addEventListener("resize", function () {
-  app.renderer.resize(window.innerWidth, window.innerHeight);
+  c.width = window.innerWidth;
+  c.height = window.innerHeight;
 });
-
-document.body.appendChild(app.view);
 
 import Grid from "./Grid";
 import { CellState } from "./Cell";
 
-const CELL_SIZE = 5;
+const CELL_SIZE = 3;
 const CELL_COUNT_X = Math.ceil(window.innerWidth / CELL_SIZE);
 
 const GRID = new Grid(window.innerWidth, window.innerHeight, CELL_SIZE);
 
-const GRAPHICS = new Graphics();
-
-app.stage.addChild(GRAPHICS);
-
-app.ticker.add(() => {
+// main update and draw loop
+const loop = () => {
   if (GRID === undefined) return;
 
   // update velocity
   for (const cell of GRID.cells) {
-    if (cell.state !== 0 && cell.state !== CellState.Stone && !cell.stopped) cell.velocity += 0.5;
+    if (cell.state !== CellState.Empty && cell.state !== CellState.Stone && !cell.stopped)
+      cell.velocity += 0.5;
     else if (cell.velocity !== 1) cell.velocity = 1;
   }
 
   GRID.update();
 
   // draw
-  GRAPHICS.clear();
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, c.width, c.height);
 
   let lastState: CellState;
   for (let i = 0; i < GRID.cells.length; i++) {
     const cell = GRID.cells[i];
 
-    let fill: number;
+    let fill: string;
     if (cell.state !== lastState) {
       switch (cell.state) {
         case CellState.Sand:
-          fill = 0x624f21;
+          fill = "#624f21";
           break;
         case CellState.Stone:
-          fill = 0x3b3b39;
+          fill = "#3b3b39";
           break;
         case CellState.Water:
-          fill = 0x4b8aae;
+          fill = "#4b8aae";
           break;
         case CellState.Gas:
-          fill = 0x595957;
+          fill = "#595957";
           break;
         default:
-          fill = 0x000000;
+          fill = "#000000";
           break;
       }
     }
 
-    if (cell.state !== 0) {
-      // try {
-      //   container.removeChildAt(INDEX_MAP[i]);
-      // } catch {}
-
-      if (cell.state !== lastState) GRAPHICS.beginFill(fill);
+    if (cell.state !== CellState.Empty) {
+      if (cell.state !== lastState) ctx.fillStyle = fill;
       lastState = cell.state;
 
-      GRAPHICS.drawRect(cell.x * CELL_SIZE, cell.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-
-      // if (!INDEX_MAP[i]) INDEX_MAP[i] = container.children.length;
-      // container.addChildAt(container, INDEX_MAP[i]);
-      // GRID.changed[i] = false;
+      ctx.fillRect(cell.x * CELL_SIZE, cell.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
     }
-    // } else if (GRID.changed[i] && INDEX_MAP[i]) {
-    //   container.removeChildAt(INDEX_MAP[i]);
-
-    //   for (const key in INDEX_MAP) {
-    //     const val = INDEX_MAP[key];
-    //     if (val > INDEX_MAP[i]) {
-    //       INDEX_MAP[key] -= 1;
-    //     }
-    //   }
-
-    //   delete INDEX_MAP[i];
-
-    // }
   }
-});
+};
+
+let lastFrameTime = Date.now();
+let delta: number;
+const desiredDelta = Math.ceil(1000 / 60);
+
+setInterval(() => {
+  delta = Date.now() - lastFrameTime;
+  lastFrameTime = Date.now();
+
+  loop();
+
+  ctx.font = "18px Arial";
+  ctx.fillStyle = "white";
+  ctx.fillText(String(Math.round(1000 / delta)), 10, 20);
+}, desiredDelta);
 
 // handle key events
 let keyIsPressed = false;
@@ -136,7 +116,7 @@ const fillCell = (e: MouseEvent) => {
         state = CellState.Stone;
         break;
       case "e":
-        state = 0;
+        state = CellState.Empty;
         break;
       case "w":
         state = CellState.Water;
@@ -163,7 +143,7 @@ window.addEventListener("mousedown", (e: MouseEvent) => {
   isMouseDown = true;
 
   fillCell(e);
-  holdingInterval = setInterval(() => fillCell(e), 250);
+  holdingInterval = setInterval(() => fillCell(e), 100);
 });
 
 window.addEventListener("mousemove", (e: MouseEvent) => {
