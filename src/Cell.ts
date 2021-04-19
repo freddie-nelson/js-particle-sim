@@ -5,19 +5,15 @@ export enum CellState {
   Water,
   Lava,
   Gas,
+  Boundary,
 }
 
 export default class Cell {
-  state: number;
-  x: number;
-  y: number;
+  state: CellState;
   velocity: number = 1;
-  stopped: boolean = false;
+  static: boolean = false;
 
-  constructor(x: number, y: number, state: CellState = CellState.Empty) {
-    this.x = x;
-    this.y = y;
-
+  constructor(state: CellState = CellState.Empty) {
     this.state = state;
   }
 

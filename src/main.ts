@@ -14,7 +14,6 @@ import Grid from "./Grid";
 import { CellState } from "./Cell";
 
 const CELL_SIZE = 3;
-const CELL_COUNT_X = Math.ceil(window.innerWidth / CELL_SIZE);
 
 const GRID = new Grid(window.innerWidth, window.innerHeight, CELL_SIZE);
 
@@ -23,10 +22,18 @@ const loop = () => {
   if (GRID === undefined) return;
 
   // update velocity
-  for (const cell of GRID.cells) {
-    if (cell.state !== CellState.Empty && cell.state !== CellState.Stone && !cell.stopped)
-      cell.velocity += 0.5;
-    else if (cell.velocity !== 1) cell.velocity = 1;
+  for (const row of GRID.cells) {
+    for (const cell of row) {
+      if (
+        cell.state === CellState.Empty ||
+        cell.state === CellState.Boundary ||
+        cell.state === CellState.Stone
+      )
+        continue;
+
+      if (!cell.static) cell.velocity += 0.5;
+      else if (cell.velocity !== 1) cell.velocity = 1;
+    }
   }
 
   GRID.update();
@@ -36,37 +43,56 @@ const loop = () => {
   ctx.fillRect(0, 0, c.width, c.height);
 
   let lastState: CellState;
-  for (let i = 0; i < GRID.cells.length; i++) {
-    const cell = GRID.cells[i];
+  let sameStateCounter = 1;
+  GRID.everyCell(
+    (y, x) => {
+      const cell = GRID.cells[y][x];
+      if (
+        cell.state !== lastState ||
+        (x === GRID.CELL_COUNT_X - 2 &&
+          !(cell.state === CellState.Empty || cell.state === CellState.Boundary))
+      ) {
+        if (lastState !== CellState.Empty) {
+          let fill: string;
+          switch (lastState) {
+            case CellState.Sand:
+              fill = "#624f21";
+              break;
+            case CellState.Stone:
+              fill = "#3b3b39";
+              break;
+            case CellState.Water:
+              fill = "#4b8aae";
+              break;
+            case CellState.Gas:
+              fill = "#595957";
+              break;
+            default:
+              fill = "#FFF";
+              break;
+          }
 
-    let fill: string;
-    if (cell.state !== lastState) {
-      switch (cell.state) {
-        case CellState.Sand:
-          fill = "#624f21";
-          break;
-        case CellState.Stone:
-          fill = "#3b3b39";
-          break;
-        case CellState.Water:
-          fill = "#4b8aae";
-          break;
-        case CellState.Gas:
-          fill = "#595957";
-          break;
-        default:
-          fill = "#000000";
-          break;
+          ctx.fillStyle = fill;
+          ctx.fillRect(
+            (x - sameStateCounter) * CELL_SIZE,
+            y * CELL_SIZE,
+            CELL_SIZE * sameStateCounter,
+            CELL_SIZE
+          );
+        }
+
+        sameStateCounter = 1;
+        lastState = cell.state;
+        return;
       }
-    }
 
-    if (cell.state !== CellState.Empty) {
-      if (cell.state !== lastState) ctx.fillStyle = fill;
-      lastState = cell.state;
-
-      ctx.fillRect(cell.x * CELL_SIZE, cell.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      sameStateCounter++;
+    },
+    (y) => {
+      sameStateCounter = 1;
+      lastState = CellState.Empty;
     }
-  }
+  );
 };
 
 let lastFrameTime = Date.now();
@@ -107,7 +133,6 @@ const fillCell = (e: MouseEvent) => {
 
   const x = Math.floor(e.pageX / CELL_SIZE);
   const y = Math.floor(e.pageY / CELL_SIZE);
-  const i = x + CELL_COUNT_X * y;
 
   let state: CellState;
   if (keyIsPressed) {
@@ -130,9 +155,7 @@ const fillCell = (e: MouseEvent) => {
   if (state === undefined) state = CellState.Sand;
 
   const brushSize = Math.floor(window.innerWidth / 40 / CELL_SIZE);
-  if (GRID.cells[i] !== undefined) {
-    GRID.makeCircle(x, y, brushSize, state);
-  }
+  GRID.makeCircle(x, y, brushSize, state);
 };
 
 window.addEventListener("mouseup", () => {

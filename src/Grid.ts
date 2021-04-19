@@ -4,8 +4,9 @@ export default class Grid {
   CELL_COUNT_X: number;
   CELL_COUNT_Y: number;
 
-  cells: Cell[] = [];
-  // changed: boolean[] = [];
+  cells: Cell[][] = [];
+  updated: Uint8Array;
+  opened: Uint8Array;
 
   constructor(width: number, height: number, cellSize: number) {
     const xCellsNum = Math.ceil(width / cellSize);
@@ -14,102 +15,122 @@ export default class Grid {
     const yCellsNum = Math.ceil(height / cellSize);
     this.CELL_COUNT_Y = yCellsNum;
 
-    for (let i = 0; i < xCellsNum * yCellsNum; i++) {
-      this.cells[i] = new Cell(i % xCellsNum, Math.floor(i / xCellsNum));
-      // this.changed[i] = false;
+    this.updated = new Uint8Array(xCellsNum * yCellsNum);
+    this.opened = new Uint8Array(xCellsNum * yCellsNum);
+
+    // fill this.cells with empty cells with boundaries
+    for (let y = 0; y < yCellsNum; y++) {
+      const row: Cell[] = [];
+      const state = y === 0 || y === yCellsNum - 1 ? CellState.Boundary : CellState.Empty;
+
+      for (let x = 0; x < xCellsNum; x++) {
+        row.push(new Cell(state));
+      }
+
+      row[0].state = CellState.Boundary;
+      row[row.length - 1].state = CellState.Boundary;
+
+      this.cells.push(row);
+    }
+  }
+
+  // everyCell executes callback for every cell in grid excluding boundaries
+  everyCell(callback: (y: number, x: number) => void, rowCallback?: (y: number) => void) {
+    for (let y = this.CELL_COUNT_Y - 1; y > 0; y--) {
+      if (rowCallback) rowCallback(y);
+
+      for (let x = 1; x < this.CELL_COUNT_X - 1; x++) {
+        callback(y, x);
+      }
     }
   }
 
   update() {
-    // go along each row from rtl and ltr
-    for (const direction of [0, 1]) {
-      for (let y = this.CELL_COUNT_Y - 1; y >= 0; y--) {
-        for (let x = 0; x < this.CELL_COUNT_X; x++) {
-          const cell = this.getCell(direction === 0 ? x : this.CELL_COUNT_X - x - 1, y);
-
-          // simulate particles
-          switch (cell.state) {
-            case CellState.Sand:
-              const start = Date.now();
-              this.calculateNextPosition(cell);
-              if (Date.now() - start >= 10) {
-                console.log(`X: ${cell.x}, Y: ${cell.y}, I: ${cell.x + this.CELL_COUNT_X * cell.y}`);
-              }
-              break;
-            case CellState.Water:
-              this.calculateNextPosition(cell, true);
-              break;
-            case CellState.Gas:
-              this.calculateNextPosition(cell, false, -1);
-              break;
-            default:
-              break;
-          }
-        }
+    this.everyCell((y, x) => {
+      const cell = this.cells[y][x];
+      // simulate particles
+      switch (cell.state) {
+        case CellState.Sand:
+          // const start = Date.now();
+          this.calculateNextPosition(y, x);
+          // if (Date.now() - start >= 10) {
+          //   console.log(`X: ${x}, Y: ${y}, I: ${x + this.CELL_COUNT_X * y}`);
+          // }
+          break;
+        case CellState.Water:
+          this.calculateNextPosition(y, x, true);
+          break;
+        case CellState.Gas:
+          this.calculateNextPosition(y, x, false);
+          break;
+        default:
+          break;
       }
+    });
+
+    // reset updated and check for newly opened cells
+    for (let i = 0; i < this.updated.length; i++) {
+      this.updated[i] = 0;
     }
   }
 
-  calculateNextPosition(cell: Cell, spread: boolean = false, yOffset: number = 1) {
-    let last = cell;
-    const currentV = cell.velocity;
+  calculateNextPosition(y: number, x: number, spread: boolean = false) {
+    const cell = this.cells[y][x];
+    let lastX = x;
+    let lastY = y;
 
+    // if cell has already been updated this cycle, exit
+    if (this.updated[x * this.CELL_COUNT_X * y] === 1) return;
+
+    const currentV = cell.velocity;
     for (let i = 0; i < currentV; i++) {
-      // calculate xOffset
-      let xOffset;
-      if (last.y + yOffset < 0 || last.y + yOffset >= this.CELL_COUNT_Y) break;
-      else if (cell.canPass(this.getCell(last.x, last.y + yOffset))) {
-        xOffset = 0;
-      } else if (last.x + 1 < this.CELL_COUNT_X && last.canPass(this.getCell(last.x + 1, last.y + yOffset))) {
+      const last = this.cells[lastY][lastX];
+
+      // calculate new position
+      let newX = lastX;
+      let newY = lastY;
+      if (last.canPass(this.cells[lastY + 1][lastX])) {
+        newY++;
+      } else if (last.canPass(this.cells[lastY + 1][lastX + 1])) {
         // move to right
-        xOffset = 1;
-      } else if (last.x - 1 >= 0 && last.canPass(this.getCell(last.x - 1, last.y + yOffset))) {
+        newX++;
+        newY++;
+      } else if (last.canPass(this.cells[lastY + 1][lastX - 1])) {
         // move to left
-        xOffset = -1;
+        newX--;
+        newY++;
       } else if (spread) {
-        yOffset = 0;
-        if (last.x + 1 < this.CELL_COUNT_X && last.canPass(this.getCell(last.x + 1, last.y))) {
-          xOffset = 1;
-        } else if (last.x - 1 >= 0 && last.canPass(this.getCell(last.x - 1, last.y))) {
-          xOffset = -1;
+        if (last.canPass(this.cells[lastY][lastX + 1])) {
+          newX++;
+        } else if (last.canPass(this.cells[lastY][lastX - 1])) {
+          newX--;
         }
       }
 
       // pick current
-      const current = this.getCell(last.x + xOffset, last.y + yOffset);
+      const current = this.cells[newY][newX];
 
-      if (current === undefined || !cell.canPass(current)) {
+      if (current === last) {
+        current.velocity = 0;
+      }
+
+      lastY = newY;
+      lastX = newX;
+
+      if (current === undefined || !last.canPass(current)) {
         break;
       }
 
-      last = current;
+      this.swapCells(last, current);
     }
 
-    if (cell === last) {
-      if (!cell.stopped) {
-        this.swapCells(cell, last);
-      }
-
-      cell.stopped = true;
-    } else {
-      // this.changed[this.getCellIndex(cell)] = true;
-      // this.changed[this.getCellIndex(last)] = true;
-      this.swapCells(cell, last);
-    }
-  }
-
-  getCell(x: number, y: number) {
-    return this.cells[x + this.CELL_COUNT_X * y];
-  }
-
-  getCellIndex(cell: Cell) {
-    return cell.x + this.CELL_COUNT_X * cell.y;
+    this.updated[lastX * this.CELL_COUNT_X * lastY] = 1;
   }
 
   emptyCell(cell: Cell, state: CellState = CellState.Empty) {
     cell.state = state;
     cell.velocity = 0;
-    cell.stopped = false;
+    cell.static = false;
   }
 
   fillCell(cell: Cell, data: { state: number; velocity: number }) {
@@ -123,8 +144,12 @@ export default class Grid {
       velocity: cell.velocity,
     };
 
-    this.emptyCell(cell, swap.state);
+    this.fillCell(cell, { state: swap.state, velocity: swap.velocity });
     this.fillCell(swap, data);
+  }
+
+  isInGrid(y: number, x: number) {
+    return y >= 0 && y < this.CELL_COUNT_Y && x >= 0 && x < this.CELL_COUNT_X;
   }
 
   makeCircle(xCenter: number, yCenter: number, radius: number, state: CellState) {
@@ -137,13 +162,13 @@ export default class Grid {
 
           // (x, y), (x, ySym), (xSym , y), (xSym, ySym) are in the circle
           const cells = [
-            this.getCell(x, y),
-            this.getCell(x, ySym),
-            this.getCell(xSym, y),
-            this.getCell(xSym, ySym),
+            this.isInGrid(y, x) ? this.cells[y][x] : undefined,
+            this.isInGrid(ySym, x) ? this.cells[ySym][x] : undefined,
+            this.isInGrid(y, xSym) ? this.cells[y][xSym] : undefined,
+            this.isInGrid(ySym, xSym) ? this.cells[ySym][xSym] : undefined,
           ];
           for (const cell of cells) {
-            if (cell !== undefined) {
+            if (cell !== undefined && cell.state !== CellState.Boundary) {
               cell.state = state;
               // this.changed[this.getCellIndex(cell)] = true;
             }
