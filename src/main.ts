@@ -1,3 +1,5 @@
+declare var CURRENT_FRAME: number;
+
 const c = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = c.getContext("2d");
 
@@ -31,7 +33,7 @@ const loop = () => {
       )
         continue;
 
-      if (!cell.static) cell.velocity += 0.5;
+      if (!cell.static && cell.velocity < 15) cell.velocity += 0.5;
       else if (cell.velocity !== 1) cell.velocity = 1;
     }
   }
@@ -43,65 +45,66 @@ const loop = () => {
   ctx.fillRect(0, 0, c.width, c.height);
 
   let lastState: CellState;
-  let sameStateCounter = 1;
+  let stateChangeMarker: number;
   GRID.everyCell(
-    (y, x) => {
+    (y, x, lastX) => {
       const cell = GRID.cells[y][x];
       if (
         cell.state !== lastState ||
-        (x === GRID.CELL_COUNT_X - 2 &&
-          !(cell.state === CellState.Empty || cell.state === CellState.Boundary))
+        (x === lastX && !(cell.state === CellState.Empty || cell.state === CellState.Boundary))
       ) {
         if (lastState !== CellState.Empty) {
-          let fill: string;
           switch (lastState) {
             case CellState.Sand:
-              fill = "#624f21";
+              ctx.fillStyle = "#624f21";
               break;
             case CellState.Stone:
-              fill = "#3b3b39";
+              ctx.fillStyle = "#3b3b39";
               break;
             case CellState.Water:
-              fill = "#4b8aae";
+              ctx.fillStyle = "#4b8aae";
               break;
             case CellState.Gas:
-              fill = "#595957";
+              ctx.fillStyle = "#595957";
               break;
             default:
-              fill = "#FFF";
+              ctx.fillStyle = "#FFF";
               break;
           }
 
-          ctx.fillStyle = fill;
-          ctx.fillRect(
-            (x - sameStateCounter) * CELL_SIZE,
-            y * CELL_SIZE,
-            CELL_SIZE * sameStateCounter,
-            CELL_SIZE
-          );
+          const diff = x - stateChangeMarker;
+          ctx.fillRect(stateChangeMarker * CELL_SIZE, y * CELL_SIZE, CELL_SIZE * diff, CELL_SIZE);
         }
 
-        sameStateCounter = 1;
+        stateChangeMarker = x;
         lastState = cell.state;
         return;
       }
-
-      sameStateCounter++;
     },
-    (y) => {
-      sameStateCounter = 1;
+    () => {
       lastState = CellState.Empty;
     }
   );
 };
 
+import { usePaintBrush } from "./input";
+const { paintCircle } = usePaintBrush(CELL_SIZE, GRID);
+
+// draw and update ticker
 let lastFrameTime = Date.now();
 let delta: number;
-const desiredDelta = Math.ceil(1000 / 60);
+const MAX_FPS = 100;
+const desiredDelta = Math.ceil(1000 / MAX_FPS);
 
 setInterval(() => {
   delta = Date.now() - lastFrameTime;
   lastFrameTime = Date.now();
+
+  CURRENT_FRAME++;
+  if (CURRENT_FRAME > MAX_FPS) CURRENT_FRAME = 0;
+
+  // try to paint circle
+  paintCircle();
 
   loop();
 
@@ -109,67 +112,3 @@ setInterval(() => {
   ctx.fillStyle = "white";
   ctx.fillText(String(Math.round(1000 / delta)), 10, 20);
 }, desiredDelta);
-
-// handle key events
-let keyIsPressed = false;
-let key = "";
-
-window.addEventListener("keydown", (e: KeyboardEvent) => {
-  keyIsPressed = true;
-  key = e.key;
-});
-
-window.addEventListener("keyup", () => {
-  keyIsPressed = false;
-  key = "";
-});
-
-// handle mouse events
-let isMouseDown = false;
-let holdingInterval: NodeJS.Timeout;
-
-const fillCell = (e: MouseEvent) => {
-  if (!isMouseDown) return;
-
-  const x = Math.floor(e.pageX / CELL_SIZE);
-  const y = Math.floor(e.pageY / CELL_SIZE);
-
-  let state: CellState;
-  if (keyIsPressed) {
-    switch (key) {
-      case "s":
-        state = CellState.Stone;
-        break;
-      case "e":
-        state = CellState.Empty;
-        break;
-      case "w":
-        state = CellState.Water;
-        break;
-      case "g":
-        state = CellState.Gas;
-        break;
-    }
-  }
-
-  if (state === undefined) state = CellState.Sand;
-
-  const brushSize = Math.floor(window.innerWidth / 40 / CELL_SIZE);
-  GRID.makeCircle(x, y, brushSize, state);
-};
-
-window.addEventListener("mouseup", () => {
-  isMouseDown = false;
-  clearInterval(holdingInterval);
-});
-window.addEventListener("mousedown", (e: MouseEvent) => {
-  isMouseDown = true;
-
-  fillCell(e);
-  holdingInterval = setInterval(() => fillCell(e), 100);
-});
-
-window.addEventListener("mousemove", (e: MouseEvent) => {
-  clearInterval(holdingInterval);
-  fillCell(e);
-});

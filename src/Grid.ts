@@ -1,3 +1,5 @@
+declare var CURRENT_FRAME: number;
+
 import Cell, { CellState } from "./Cell";
 
 export default class Grid {
@@ -6,7 +8,6 @@ export default class Grid {
 
   cells: Cell[][] = [];
   updated: Uint8Array;
-  opened: Uint8Array;
 
   constructor(width: number, height: number, cellSize: number) {
     const xCellsNum = Math.ceil(width / cellSize);
@@ -16,7 +17,6 @@ export default class Grid {
     this.CELL_COUNT_Y = yCellsNum;
 
     this.updated = new Uint8Array(xCellsNum * yCellsNum);
-    this.opened = new Uint8Array(xCellsNum * yCellsNum);
 
     // fill this.cells with empty cells with boundaries
     for (let y = 0; y < yCellsNum; y++) {
@@ -35,12 +35,18 @@ export default class Grid {
   }
 
   // everyCell executes callback for every cell in grid excluding boundaries
-  everyCell(callback: (y: number, x: number) => void, rowCallback?: (y: number) => void) {
-    for (let y = this.CELL_COUNT_Y - 1; y > 0; y--) {
+  everyCell(callback: (y: number, x: number, lastX?: number) => void, rowCallback?: (y: number) => void) {
+    for (let y = 1; y < this.CELL_COUNT_Y - 1; y++) {
       if (rowCallback) rowCallback(y);
 
-      for (let x = 1; x < this.CELL_COUNT_X - 1; x++) {
-        callback(y, x);
+      if (y % 2 === 0) {
+        for (let x = 1; x < this.CELL_COUNT_X - 1; x++) {
+          callback(y, x, this.CELL_COUNT_X - 2);
+        }
+      } else {
+        for (let x = this.CELL_COUNT_X - 2; x > 0; x--) {
+          callback(y, x, 1);
+        }
       }
     }
   }
@@ -80,7 +86,7 @@ export default class Grid {
     let lastY = y;
 
     // if cell has already been updated this cycle, exit
-    if (this.updated[x * this.CELL_COUNT_X * y] === 1) return;
+    if (this.updated[x + this.CELL_COUNT_X * y] === 1) return;
 
     const currentV = cell.velocity;
     for (let i = 0; i < currentV; i++) {
@@ -89,6 +95,7 @@ export default class Grid {
       // calculate new position
       let newX = lastX;
       let newY = lastY;
+
       if (last.canPass(this.cells[lastY + 1][lastX])) {
         newY++;
       } else if (last.canPass(this.cells[lastY + 1][lastX + 1])) {
@@ -124,7 +131,7 @@ export default class Grid {
       this.swapCells(last, current);
     }
 
-    this.updated[lastX * this.CELL_COUNT_X * lastY] = 1;
+    this.updated[lastX + this.CELL_COUNT_X * lastY] = 1;
   }
 
   emptyCell(cell: Cell, state: CellState = CellState.Empty) {
