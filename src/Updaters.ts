@@ -82,8 +82,32 @@ export default function useUpdaters(GRID: Grid) {
     });
   };
 
+  const gas = (y: number, x: number): Position => {
+    return base(y, x, (last: Cell, neighbours: Neighbours, newPos: Position) => {
+      if (last.canPass(neighbours.top)) {
+        // move up
+        newPos.y--;
+      } else if (last.canPass(neighbours.tRight)) {
+        // move up right
+        newPos.x++;
+        newPos.y--;
+      } else if (last.canPass(neighbours.tLeft)) {
+        // move up left
+        newPos.x--;
+        newPos.y--;
+      } else if (last.canPass(neighbours.right)) {
+        // move right
+        newPos.x++;
+      } else if (last.canPass(neighbours.left)) {
+        // move left
+        newPos.x--;
+      }
+    });
+  };
+
   return {
     sand,
     water,
+    gas,
   };
 }

@@ -73,7 +73,12 @@ export default class Grid {
       const cell = this.cells[y][x];
 
       // if cell has already been updated this cycle or empty, exit
-      if (cell.state === CellState.Empty || this.updated[x + this.CELL_COUNT_X * y] === 1) return;
+      if (
+        cell.state === CellState.Empty ||
+        cell.state === CellState.Stone ||
+        this.updated[x + this.CELL_COUNT_X * y] === 1
+      )
+        return;
 
       // simulate particles
       let updatedPos: { y: number; x: number };
@@ -86,7 +91,7 @@ export default class Grid {
           updatedPos = updaters.water(y, x);
           break;
         case CellState.Gas:
-          // this.calculateNextPosition(y, x, false);
+          updatedPos = updaters.gas(y, x);
           break;
         default:
           break;
