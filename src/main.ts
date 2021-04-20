@@ -93,7 +93,7 @@ const { paintCircle } = usePaintBrush(CELL_SIZE, GRID);
 // draw and update ticker
 let lastFrameTime = Date.now();
 let delta: number;
-const MAX_FPS = 100;
+const MAX_FPS = 200;
 const desiredDelta = Math.ceil(1000 / MAX_FPS);
 
 setInterval(() => {

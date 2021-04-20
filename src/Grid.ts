@@ -1,6 +1,21 @@
-declare var CURRENT_FRAME: number;
-
 import Cell, { CellState } from "./Cell";
+
+export interface Neighbours {
+  top?: Cell;
+  bottom?: Cell;
+  right?: Cell;
+  left?: Cell;
+  bRight?: Cell;
+  tRight?: Cell;
+  bLeft?: Cell;
+  tLeft?: Cell;
+}
+
+import useUpdaters from "./Updaters";
+
+// get updaters type
+const dummy = (false as true) && useUpdaters(undefined);
+let updaters: typeof dummy;
 
 export default class Grid {
   CELL_COUNT_X: number;
@@ -32,6 +47,8 @@ export default class Grid {
 
       this.cells.push(row);
     }
+
+    updaters = useUpdaters(this);
   }
 
   // everyCell executes callback for every cell in grid excluding boundaries
@@ -54,24 +71,31 @@ export default class Grid {
   update() {
     this.everyCell((y, x) => {
       const cell = this.cells[y][x];
+
+      // if cell has already been updated this cycle or empty, exit
+      if (cell.state === CellState.Empty || this.updated[x + this.CELL_COUNT_X * y] === 1) return;
+
       // simulate particles
+      let updatedPos: { y: number; x: number };
+
       switch (cell.state) {
         case CellState.Sand:
-          // const start = Date.now();
-          this.calculateNextPosition(y, x);
-          // if (Date.now() - start >= 10) {
-          //   console.log(`X: ${x}, Y: ${y}, I: ${x + this.CELL_COUNT_X * y}`);
-          // }
+          updatedPos = updaters.sand(y, x);
           break;
         case CellState.Water:
-          this.calculateNextPosition(y, x, true);
+          updatedPos = updaters.water(y, x);
           break;
         case CellState.Gas:
-          this.calculateNextPosition(y, x, false);
+          // this.calculateNextPosition(y, x, false);
           break;
         default:
           break;
       }
+
+      if (updatedPos.x === x && updatedPos.y === y) this.cells[updatedPos.y][updatedPos.x].velocity = 0;
+
+      // mark cell as updated
+      this.updated[updatedPos.x + this.CELL_COUNT_X * updatedPos.y] = 1;
     });
 
     // reset updated and check for newly opened cells
@@ -80,58 +104,50 @@ export default class Grid {
     }
   }
 
-  calculateNextPosition(y: number, x: number, spread: boolean = false) {
-    const cell = this.cells[y][x];
-    let lastX = x;
-    let lastY = y;
+  getNeighbours(y: number, x: number): Neighbours {
+    const neighbours: Neighbours = {};
 
-    // if cell has already been updated this cycle, exit
-    if (this.updated[x + this.CELL_COUNT_X * y] === 1) return;
-
-    const currentV = cell.velocity;
-    for (let i = 0; i < currentV; i++) {
-      const last = this.cells[lastY][lastX];
-
-      // calculate new position
-      let newX = lastX;
-      let newY = lastY;
-
-      if (last.canPass(this.cells[lastY + 1][lastX])) {
-        newY++;
-      } else if (last.canPass(this.cells[lastY + 1][lastX + 1])) {
-        // move to right
-        newX++;
-        newY++;
-      } else if (last.canPass(this.cells[lastY + 1][lastX - 1])) {
-        // move to left
-        newX--;
-        newY++;
-      } else if (spread) {
-        if (last.canPass(this.cells[lastY][lastX + 1])) {
-          newX++;
-        } else if (last.canPass(this.cells[lastY][lastX - 1])) {
-          newX--;
-        }
-      }
-
-      // pick current
-      const current = this.cells[newY][newX];
-
-      if (current === last) {
-        current.velocity = 0;
-      }
-
-      lastY = newY;
-      lastX = newX;
-
-      if (current === undefined || !last.canPass(current)) {
-        break;
-      }
-
-      this.swapCells(last, current);
+    // right
+    let right = false;
+    if (this.isInGrid(y, x + 1)) {
+      neighbours.right = this.cells[y][x + 1];
+      right = true;
     }
 
-    this.updated[lastX + this.CELL_COUNT_X * lastY] = 1;
+    // left
+    let left = false;
+    if (this.isInGrid(y, x - 1)) {
+      neighbours.left = this.cells[y][x - 1];
+      left = true;
+    }
+
+    // top
+    if (this.isInGrid(y - 1, x)) {
+      neighbours.top = this.cells[y - 1][x];
+
+      // top right and left
+      if (right) {
+        neighbours.tRight = this.cells[y - 1][x + 1];
+      }
+      if (left) {
+        neighbours.tLeft = this.cells[y - 1][x - 1];
+      }
+    }
+
+    // bottom
+    if (this.isInGrid(y + 1, x)) {
+      neighbours.bottom = this.cells[y + 1][x];
+
+      // bottom right and left
+      if (right) {
+        neighbours.bRight = this.cells[y + 1][x + 1];
+      }
+      if (left) {
+        neighbours.bLeft = this.cells[y + 1][x - 1];
+      }
+    }
+
+    return neighbours;
   }
 
   emptyCell(cell: Cell, state: CellState = CellState.Empty) {
@@ -156,7 +172,7 @@ export default class Grid {
   }
 
   isInGrid(y: number, x: number) {
-    return y >= 0 && y < this.CELL_COUNT_Y && x >= 0 && x < this.CELL_COUNT_X;
+    return y >= 1 && y < this.CELL_COUNT_Y - 1 && x >= 1 && x < this.CELL_COUNT_X - 1;
   }
 
   makeCircle(xCenter: number, yCenter: number, radius: number, state: CellState) {
@@ -175,7 +191,7 @@ export default class Grid {
             this.isInGrid(ySym, xSym) ? this.cells[ySym][xSym] : undefined,
           ];
           for (const cell of cells) {
-            if (cell !== undefined && cell.state !== CellState.Boundary) {
+            if (cell !== undefined) {
               cell.state = state;
               // this.changed[this.getCellIndex(cell)] = true;
             }
