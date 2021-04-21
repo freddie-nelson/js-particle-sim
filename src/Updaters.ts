@@ -1,4 +1,4 @@
-import Cell from "./Cell";
+import Cell, { CellState } from "./Cell";
 import Grid, { Neighbours } from "./Grid";
 
 interface Position {
@@ -10,7 +10,7 @@ export default function useUpdaters(GRID: Grid) {
   const base = (
     y: number,
     x: number,
-    rules: (last: Cell, neighbours: Neighbours, newPos: Position) => void
+    rules: (cell: Cell, neighbours: Neighbours, newPos: Position) => void
   ) => {
     const cell = GRID.cells[y][x];
     let lastX = x;
@@ -52,18 +52,29 @@ export default function useUpdaters(GRID: Grid) {
   };
 
   const sand = (y: number, x: number): Position => {
-    return base(y, x, (last: Cell, neighbours: Neighbours, newPos: Position) => {
-      if (last.canPass(neighbours.bottom)) {
+    return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
+      let picked: Cell;
+      if (cell.canPass(neighbours.bottom)) {
         // move down
         newPos.y++;
-      } else if (last.canPass(neighbours.bRight)) {
+        picked = neighbours.bottom;
+      } else if (cell.canPass(neighbours.bRight)) {
         // move down right
         newPos.x++;
         newPos.y++;
-      } else if (last.canPass(neighbours.bLeft)) {
+        picked = neighbours.bRight;
+      } else if (cell.canPass(neighbours.bLeft)) {
         // move down left
         newPos.x--;
         newPos.y++;
+        picked = neighbours.bLeft;
+      }
+
+      // slow sand down if it is in water
+      if (picked && picked.state === CellState.Water) {
+        cell.velocity -= 0.6;
+        if (cell.velocity >= 8) cell.velocity = 8;
+        if (cell.velocity <= 2) cell.velocity = 2;
       }
     });
   };

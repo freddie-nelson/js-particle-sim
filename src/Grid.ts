@@ -212,10 +212,9 @@ export default class Grid {
             if (pos !== undefined) {
               const cell = this.cells[pos.y][pos.x];
               cell.state = state;
-              const neighbours = this.getNeighbours(pos.y, pos.x);
 
+              const neighbours = this.getNeighbours(pos.y, pos.x);
               Object.keys(neighbours).forEach((k) => (neighbours[k].static = false));
-              // this.changed[this.getCellIndex(cell)] = true;
             }
           }
         }

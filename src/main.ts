@@ -15,7 +15,7 @@ c.height = window.innerHeight;
 import Grid from "./Grid";
 import Cell, { CellState } from "./Cell";
 
-const CELL_SIZE = 10;
+const CELL_SIZE = 3;
 
 const GRID = new Grid(window.innerWidth, window.innerHeight, CELL_SIZE);
 
@@ -92,7 +92,7 @@ const loop = () => {
   );
 
   // draw boundary
-  ctx.strokeStyle = "darkgrey";
+  ctx.strokeStyle = "grey";
   ctx.lineWidth = CELL_SIZE;
   const halfSize = CELL_SIZE / 2;
   ctx.strokeRect(halfSize, halfSize, c.width - CELL_SIZE, c.height - CELL_SIZE);
