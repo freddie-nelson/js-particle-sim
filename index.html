@@ -7,13 +7,152 @@
         padding: 0px;
         margin: 0px;
       }
+
+      body {
+        width: 100vw;
+        height: 100vh;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      main {
+        display: flex;
+        height: 100%;
+      }
+
+      #canvas {
+        width: calc(100vw - 300px);
+      }
+
+      .controls {
+        width: 280px;
+        height: calc(100% - 20px);
+        background-color: #171f27;
+        color: white;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .title {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .title h1 {
+        font-size: 2rem;
+      }
+
+      .title h2 {
+        font-size: 1.2rem;
+        opacity: 0.5;
+      }
+
+      h3 {
+        margin-top: 30px;
+      }
+
+      .button-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+      }
+
+      button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+        outline: none;
+        background-color: white;
+        color: black;
+        font-weight: 800;
+        border-radius: 8px;
+        width: 50px;
+        height: 50px;
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #acacac;
+      }
+
+      button.big {
+        width: 100%;
+        margin-top: 8px;
+      }
+
+      button.push {
+        margin-top: auto;
+      }
     </style>
-    <script>
-      window.CURRENT_FRAME = 0;
-    </script>
   </head>
 
   <body>
-    <canvas id="canvas"></canvas>
+    <main>
+      <canvas id="canvas"></canvas>
+      <section class="controls">
+        <div class="title">
+          <h1>Particle Sim</h1>
+          <h2>By Freddie</h2>
+        </div>
+
+        <h3>Brush Size</h3>
+        <div class="button-container">
+          <button onclick="window.BRUSH_SIZE = 3">3</button>
+          <button onclick="window.BRUSH_SIZE = 6">6</button>
+          <button onclick="window.BRUSH_SIZE = 10">10</button>
+          <button onclick="window.BRUSH_SIZE = 15">15</button>
+          <button onclick="window.BRUSH_SIZE = 20">20</button>
+        </div>
+
+        <h3>Cell Size</h3>
+        <div class="button-container">
+          <button onclick="changeCellSize(3)">3</button>
+          <button onclick="changeCellSize(4)">4</button>
+          <button onclick="changeCellSize(7)">7</button>
+          <button onclick="changeCellSize(12)">12</button>
+          <button onclick="changeCellSize(18)">18</button>
+        </div>
+
+        <h3>Material</h3>
+        <div class="button-container">
+          <button onclick="window.MATERIAL = 1">SAND</button>
+          <button onclick="window.MATERIAL = 2">STONE</button>
+          <button onclick="window.MATERIAL = 3">WATER</button>
+          <button onclick="window.MATERIAL = 5">GAS</button>
+        </div>
+
+        <button class="big push" onclick="showFPS(this)">SHOW FPS</button>
+        <button class="big" onclick="pauseSim(this)">PAUSE</button>
+        <button class="big" style="color: red" onclick="clearCanvas()">CLEAR CANVAS</button>
+      </section>
+    </main>
+
+    <script>
+      function pauseSim(btn) {
+        window.PAUSE = !window.PAUSE;
+        if (window.PAUSE) btn.innerText = "PLAY";
+        else btn.innerText = "PAUSE";
+      }
+
+      function showFPS(btn) {
+        window.SHOW_FPS = !window.SHOW_FPS;
+        if (window.SHOW_FPS) btn.innerText = "HIDE FPS";
+        else btn.innerText = "SHOW FPS";
+      }
+
+      function clearCanvas() {
+        const c = document.getElementById("canvas");
+        window.GRID.initCells(c.width, c.height, window.CELL_SIZE);
+      }
+
+      function changeCellSize(size) {
+        window.CELL_SIZE = size;
+        clearCanvas();
+      }
+    </script>
   </body>
 </html>

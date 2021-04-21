@@ -1,10 +1,41 @@
-declare var CURRENT_FRAME: number;
+// setup globals
+declare global {
+  interface Window {
+    GRID: Grid;
+    BRUSH_SIZE: number;
+    PAUSE: boolean;
+    SHOW_FPS: boolean;
+    CELL_SIZE: number;
+    MATERIAL: CellState;
+  }
+}
 
+window.BRUSH_SIZE = 10;
+window.PAUSE = false;
+window.SHOW_FPS = false;
+window.CELL_SIZE = 4;
+window.MATERIAL = 1;
+
+import Grid from "./Grid";
+import { CellState } from "./Cell";
+
+// setup canvas
 const c = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = c.getContext("2d");
+c.width = c.clientWidth;
+c.height = c.clientHeight;
 
-c.width = window.innerWidth;
-c.height = window.innerHeight;
+// create grid
+let GRID = new Grid(c.width, c.height, window.CELL_SIZE);
+window.GRID = GRID;
+
+// scale canvas to window and reset grid on resize
+window.addEventListener("resize", () => {
+  c.width = c.clientWidth;
+  c.height = c.clientHeight;
+
+  GRID.initCells(c.width, c.height, window.CELL_SIZE);
+});
 
 // make canvas always fullscreen
 // window.addEventListener("resize", function () {
@@ -12,19 +43,12 @@ c.height = window.innerHeight;
 //   c.height = window.innerHeight;
 // });
 
-import Grid from "./Grid";
-import Cell, { CellState } from "./Cell";
-
-const CELL_SIZE = 3;
-
-const GRID = new Grid(window.innerWidth, window.innerHeight, CELL_SIZE);
-
 // main update and draw loop
 const loop = () => {
   if (GRID === undefined) return;
 
   // simulate particles
-  GRID.update();
+  if (!window.PAUSE) GRID.update();
 
   // draw
   ctx.fillStyle = "black";
@@ -70,7 +94,12 @@ const loop = () => {
             else diff--;
           }
 
-          ctx.fillRect(fixedMarker * CELL_SIZE, y * CELL_SIZE, CELL_SIZE * diff, CELL_SIZE);
+          ctx.fillRect(
+            fixedMarker * window.CELL_SIZE,
+            y * window.CELL_SIZE,
+            window.CELL_SIZE * diff,
+            window.CELL_SIZE
+          );
         }
 
         stateChangeMarker = x;
@@ -80,7 +109,7 @@ const loop = () => {
       // draw debug cells
       // if (cell.state !== CellState.Empty && cell.state !== CellState.Boundary) {
       //   y % 2 === 0 ? (ctx.strokeStyle = "green") : (ctx.strokeStyle = "pink");
-      //   ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      //   ctx.strokeRect(x * window.CELL_SIZE, y * window.CELL_SIZE, window.CELL_SIZE, window.CELL_SIZE);
       //   ctx.strokeStyle = "";
       // }
     },
@@ -93,14 +122,14 @@ const loop = () => {
 
   // draw boundary
   ctx.strokeStyle = "grey";
-  ctx.lineWidth = CELL_SIZE;
-  const halfSize = CELL_SIZE / 2;
-  ctx.strokeRect(halfSize, halfSize, c.width - CELL_SIZE, c.height - CELL_SIZE);
+  ctx.lineWidth = window.CELL_SIZE;
+  const halfSize = window.CELL_SIZE / 2;
+  ctx.strokeRect(halfSize, halfSize, c.width - window.CELL_SIZE, c.height - window.CELL_SIZE);
   ctx.lineWidth = 1;
 };
 
 import { usePaintBrush } from "./input";
-const { paintCircle } = usePaintBrush(CELL_SIZE, GRID);
+const { paintCircle } = usePaintBrush(GRID);
 
 // draw and update ticker
 let lastFrameTime = Date.now();
@@ -112,15 +141,17 @@ setInterval(() => {
   delta = Date.now() - lastFrameTime;
   lastFrameTime = Date.now();
 
-  CURRENT_FRAME++;
-  if (CURRENT_FRAME > MAX_FPS) CURRENT_FRAME = 0;
+  // CURRENT_FRAME++;
+  // if (CURRENT_FRAME > MAX_FPS) CURRENT_FRAME = 0;
 
   // try to paint circle
   paintCircle();
 
   loop();
 
-  ctx.font = "18px Arial";
-  ctx.fillStyle = "white";
-  ctx.fillText(String(Math.round(1000 / delta)), 10, 20);
+  if (window.SHOW_FPS) {
+    ctx.font = "18px Arial";
+    ctx.fillStyle = "white";
+    ctx.fillText(String(Math.round(1000 / delta)), 10, 22);
+  }
 }, desiredDelta);

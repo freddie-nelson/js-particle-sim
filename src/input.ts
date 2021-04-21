@@ -1,6 +1,8 @@
 import { CellState } from "./Cell";
 import Grid from "./Grid";
 
+const c = document.getElementById("canvas") as HTMLCanvasElement;
+
 // handle key events
 let keyIsPressed = false;
 let key = "";
@@ -20,47 +22,49 @@ let isMouseDown = false;
 let MOUSE_X = 0;
 let MOUSE_Y = 0;
 
-window.addEventListener("mouseup", () => (isMouseDown = false));
-window.addEventListener("mousedown", (e: MouseEvent) => {
+c.addEventListener("mouseup", () => (isMouseDown = false));
+c.addEventListener("mousedown", (e: MouseEvent) => {
   isMouseDown = true;
-  MOUSE_X = e.pageX;
-  MOUSE_Y = e.pageY;
+  MOUSE_X = e.clientX;
+  MOUSE_Y = e.clientY;
+});
+c.addEventListener("mousemove", (e: MouseEvent) => {
+  MOUSE_X = e.clientX;
+  MOUSE_Y = e.clientY;
 });
 window.addEventListener("mousemove", (e: MouseEvent) => {
-  MOUSE_X = e.pageX;
-  MOUSE_Y = e.pageY;
+  if (e.pageX > MOUSE_X || e.pageY > MOUSE_Y) isMouseDown = false;
 });
 
-export function usePaintBrush(CELL_SIZE: number, GRID: Grid) {
+export function usePaintBrush(GRID: Grid) {
   return {
     paintCircle: () => {
       if (!isMouseDown) return;
 
-      const x = Math.floor(MOUSE_X / CELL_SIZE);
-      const y = Math.floor(MOUSE_Y / CELL_SIZE);
+      const x = Math.floor(MOUSE_X / window.CELL_SIZE);
+      const y = Math.floor(MOUSE_Y / window.CELL_SIZE);
 
-      let state: CellState;
-      if (keyIsPressed) {
-        switch (key) {
-          case "s":
-            state = CellState.Stone;
-            break;
-          case "e":
-            state = CellState.Empty;
-            break;
-          case "w":
-            state = CellState.Water;
-            break;
-          case "g":
-            state = CellState.Gas;
-            break;
-        }
-      }
+      // let state: CellState;
+      // if (keyIsPressed) {
+      //   switch (key) {
+      //     case "s":
+      //       state = CellState.Stone;
+      //       break;
+      //     case "e":
+      //       state = CellState.Empty;
+      //       break;
+      //     case "w":
+      //       state = CellState.Water;
+      //       break;
+      //     case "g":
+      //       state = CellState.Gas;
+      //       break;
+      //   }
+      // }
 
-      if (state === undefined) state = CellState.Sand;
+      // if (state === undefined) state = CellState.Sand;
 
-      const brushSize = Math.floor(window.innerWidth / 40 / CELL_SIZE);
-      GRID.makeCircle(x, y, brushSize, state);
+      GRID.makeCircle(x, y, window.BRUSH_SIZE, window.MATERIAL);
     },
   };
 }

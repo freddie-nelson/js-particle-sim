@@ -4,7 +4,7 @@
   "description": "Project to quickly get something working in [p5.js](https://p5js.org/) and [typescript](https://www.typescriptlang.org/)",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "webpack serve",
+    "dev": "webpack serve --mode=development",
     "build": "webpack"
   },
   "homepage": "https://github.com/Gaweph/p5-typescript-starter#readme",

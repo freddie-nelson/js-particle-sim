@@ -26,6 +26,12 @@ export default class Grid {
   updated: Uint8Array;
 
   constructor(width: number, height: number, cellSize: number) {
+    this.initCells(width, height, cellSize);
+
+    updaters = useUpdaters(this);
+  }
+
+  initCells(width: number, height: number, cellSize: number) {
     const xCellsNum = Math.ceil(width / cellSize);
     this.CELL_COUNT_X = xCellsNum;
 
@@ -35,6 +41,8 @@ export default class Grid {
     this.updated = new Uint8Array(xCellsNum * yCellsNum);
 
     // fill this.cells with empty cells with boundaries
+    this.cells = [];
+
     for (let y = 0; y < yCellsNum; y++) {
       const row: Cell[] = [];
       const state = y === 0 || y === yCellsNum - 1 ? CellState.Boundary : CellState.Empty;
@@ -48,8 +56,6 @@ export default class Grid {
 
       this.cells.push(row);
     }
-
-    updaters = useUpdaters(this);
   }
 
   // everyCell executes callback for every cell in grid
