@@ -7,15 +7,15 @@ c.width = window.innerWidth;
 c.height = window.innerHeight;
 
 // make canvas always fullscreen
-window.addEventListener("resize", function () {
-  c.width = window.innerWidth;
-  c.height = window.innerHeight;
-});
+// window.addEventListener("resize", function () {
+//   c.width = window.innerWidth;
+//   c.height = window.innerHeight;
+// });
 
 import Grid from "./Grid";
-import { CellState } from "./Cell";
+import Cell, { CellState } from "./Cell";
 
-const CELL_SIZE = 3;
+const CELL_SIZE = 10;
 
 const GRID = new Grid(window.innerWidth, window.innerHeight, CELL_SIZE);
 
@@ -23,21 +23,7 @@ const GRID = new Grid(window.innerWidth, window.innerHeight, CELL_SIZE);
 const loop = () => {
   if (GRID === undefined) return;
 
-  // update velocity
-  for (const row of GRID.cells) {
-    for (const cell of row) {
-      if (
-        cell.state === CellState.Empty ||
-        cell.state === CellState.Boundary ||
-        cell.state === CellState.Stone
-      )
-        continue;
-
-      if (!cell.static && cell.velocity < 15) cell.velocity += 0.5;
-      else if (cell.velocity !== 1) cell.velocity = 1;
-    }
-  }
-
+  // simulate particles
   GRID.update();
 
   // draw
@@ -49,11 +35,13 @@ const loop = () => {
   GRID.everyCell(
     (y, x, lastX) => {
       const cell = GRID.cells[y][x];
-      if (
-        cell.state !== lastState ||
-        (x === lastX && !(cell.state === CellState.Empty || cell.state === CellState.Boundary))
-      ) {
-        if (lastState !== CellState.Empty) {
+
+      if (stateChangeMarker === null) {
+        stateChangeMarker = x;
+      }
+
+      if (cell.state !== lastState) {
+        if (lastState !== CellState.Empty && lastState !== CellState.Boundary) {
           switch (lastState) {
             case CellState.Sand:
               ctx.fillStyle = "#624f21";
@@ -68,23 +56,47 @@ const loop = () => {
               ctx.fillStyle = "#595957";
               break;
             default:
-              ctx.fillStyle = "#FFF";
+              ctx.fillStyle = "";
               break;
           }
 
-          const diff = x - stateChangeMarker;
-          ctx.fillRect(stateChangeMarker * CELL_SIZE, y * CELL_SIZE, CELL_SIZE * diff, CELL_SIZE);
+          // calculate fixed drawing values due to alternating looping directions
+          const even = y % 2 === 0;
+          const fixedMarker = even ? stateChangeMarker : stateChangeMarker + 1;
+          let diff = x - stateChangeMarker;
+
+          if (x === lastX) {
+            if (even) diff++;
+            else diff--;
+          }
+
+          ctx.fillRect(fixedMarker * CELL_SIZE, y * CELL_SIZE, CELL_SIZE * diff, CELL_SIZE);
         }
 
         stateChangeMarker = x;
         lastState = cell.state;
-        return;
       }
+
+      // draw debug cells
+      // if (cell.state !== CellState.Empty && cell.state !== CellState.Boundary) {
+      //   y % 2 === 0 ? (ctx.strokeStyle = "green") : (ctx.strokeStyle = "pink");
+      //   ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      //   ctx.strokeStyle = "";
+      // }
     },
     () => {
       lastState = CellState.Empty;
-    }
+      stateChangeMarker = null;
+    },
+    true
   );
+
+  // draw boundary
+  ctx.strokeStyle = "darkgrey";
+  ctx.lineWidth = CELL_SIZE;
+  const halfSize = CELL_SIZE / 2;
+  ctx.strokeRect(halfSize, halfSize, c.width - CELL_SIZE, c.height - CELL_SIZE);
+  ctx.lineWidth = 1;
 };
 
 import { usePaintBrush } from "./input";

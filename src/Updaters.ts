@@ -29,11 +29,20 @@ export default function useUpdaters(GRID: Grid) {
       rules(last, neighbours, newPos);
 
       const current = GRID.cells[newPos.y][newPos.x];
+      if (current === undefined) break;
       lastY = newPos.y;
       lastX = newPos.x;
 
-      if (current === undefined || !last.canPass(current)) {
+      // mark cell as static if hasn't moved this cycle
+      // else mark all neighbours of last position as not static as space has opened
+      if (current === last) {
+        current.static = true;
         break;
+      } else {
+        current.static = false;
+        Object.keys(neighbours).forEach((k) => {
+          if (neighbours[k]) neighbours[k].static = false;
+        });
       }
 
       GRID.swapCells(last, current);

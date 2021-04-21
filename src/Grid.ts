@@ -1,6 +1,7 @@
 import Cell, { CellState } from "./Cell";
 
 export interface Neighbours {
+  [index: string]: Cell;
   top?: Cell;
   bottom?: Cell;
   right?: Cell;
@@ -51,18 +52,23 @@ export default class Grid {
     updaters = useUpdaters(this);
   }
 
-  // everyCell executes callback for every cell in grid excluding boundaries
-  everyCell(callback: (y: number, x: number, lastX?: number) => void, rowCallback?: (y: number) => void) {
-    for (let y = 1; y < this.CELL_COUNT_Y - 1; y++) {
+  // everyCell executes callback for every cell in grid
+  everyCell(
+    callback: (y: number, x: number, lastX?: number) => void,
+    rowCallback?: (y: number) => void,
+    includeBoundaries: boolean = false
+  ) {
+    const add = includeBoundaries ? 1 : 0;
+    for (let y = 1 - add; y < this.CELL_COUNT_Y - 1 + add; y++) {
       if (rowCallback) rowCallback(y);
 
       if (y % 2 === 0) {
-        for (let x = 1; x < this.CELL_COUNT_X - 1; x++) {
-          callback(y, x, this.CELL_COUNT_X - 2);
+        for (let x = 1 - add; x < this.CELL_COUNT_X - 1 + add; x++) {
+          callback(y, x, this.CELL_COUNT_X - 2 + add);
         }
       } else {
-        for (let x = this.CELL_COUNT_X - 2; x > 0; x--) {
-          callback(y, x, 1);
+        for (let x = this.CELL_COUNT_X - 2 + add; x >= 1 - add; x--) {
+          callback(y, x, 1 - add);
         }
       }
     }
@@ -72,13 +78,18 @@ export default class Grid {
     this.everyCell((y, x) => {
       const cell = this.cells[y][x];
 
-      // if cell has already been updated this cycle or empty, exit
+      // early exit conditions
       if (
         cell.state === CellState.Empty ||
+        cell.static ||
         cell.state === CellState.Stone ||
         this.updated[x + this.CELL_COUNT_X * y] === 1
       )
         return;
+
+      // update velocity
+      cell.velocity += 0.5;
+      if (cell.velocity >= 15) cell.velocity = 15;
 
       // simulate particles
       let updatedPos: { y: number; x: number };
@@ -97,7 +108,9 @@ export default class Grid {
           break;
       }
 
-      if (updatedPos.x === x && updatedPos.y === y) this.cells[updatedPos.y][updatedPos.x].velocity = 0;
+      if (this.cells[updatedPos.y][updatedPos.x].static) {
+        this.cells[updatedPos.y][updatedPos.x].velocity = 0;
+      }
 
       // mark cell as updated
       this.updated[updatedPos.x + this.CELL_COUNT_X * updatedPos.y] = 1;
@@ -190,14 +203,18 @@ export default class Grid {
 
           // (x, y), (x, ySym), (xSym , y), (xSym, ySym) are in the circle
           const cells = [
-            this.isInGrid(y, x) ? this.cells[y][x] : undefined,
-            this.isInGrid(ySym, x) ? this.cells[ySym][x] : undefined,
-            this.isInGrid(y, xSym) ? this.cells[y][xSym] : undefined,
-            this.isInGrid(ySym, xSym) ? this.cells[ySym][xSym] : undefined,
+            this.isInGrid(y, x) ? { y, x } : undefined,
+            this.isInGrid(ySym, x) ? { y: ySym, x } : undefined,
+            this.isInGrid(y, xSym) ? { y, x: xSym } : undefined,
+            this.isInGrid(ySym, xSym) ? { y: ySym, x: xSym } : undefined,
           ];
-          for (const cell of cells) {
-            if (cell !== undefined) {
+          for (const pos of cells) {
+            if (pos !== undefined) {
+              const cell = this.cells[pos.y][pos.x];
               cell.state = state;
+              const neighbours = this.getNeighbours(pos.y, pos.x);
+
+              Object.keys(neighbours).forEach((k) => (neighbours[k].static = false));
               // this.changed[this.getCellIndex(cell)] = true;
             }
           }

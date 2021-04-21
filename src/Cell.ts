@@ -10,7 +10,7 @@ export enum CellState {
 
 export default class Cell {
   state: CellState;
-  velocity: number = 1;
+  velocity: number = 0;
   static: boolean = false;
 
   constructor(state: CellState = CellState.Empty) {
@@ -22,13 +22,9 @@ export default class Cell {
 
     switch (this.state) {
       case CellState.Sand:
-        return (
-          pass.state === CellState.Empty ||
-          (pass.state === CellState.Water && Math.random() > 0.2) ||
-          pass.state === CellState.Gas
-        );
+        return pass.state === CellState.Empty || pass.state === CellState.Water;
       case CellState.Water:
-        return pass.state === CellState.Empty || pass.state === CellState.Gas;
+        return pass.state === CellState.Empty;
       case CellState.Gas:
         return (
           pass.state === CellState.Empty || pass.state === CellState.Sand || pass.state === CellState.Water
