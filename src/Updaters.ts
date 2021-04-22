@@ -129,7 +129,6 @@ export default function useUpdaters(GRID: Grid) {
       if (cell.canPass(n) && GRID.isInGrid(newPos.y, newPos.x)) {
         newPos.x += nx;
         newPos.y += ny;
-        if (GRID.cells[newPos.y][newPos.x].state === CellState.Sand) console.log("passed sand");
       }
     });
   };
