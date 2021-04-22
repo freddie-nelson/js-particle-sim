@@ -75,8 +75,14 @@
         cursor: pointer;
       }
 
+      button.selected {
+        background-color: black;
+        color: white;
+      }
+
       button:hover {
         background-color: #acacac;
+        color: black !important;
       }
 
       button.big {
@@ -100,29 +106,38 @@
         </div>
 
         <h3>Brush Size</h3>
-        <div class="button-container">
-          <button onclick="window.BRUSH_SIZE = 3">3</button>
-          <button onclick="window.BRUSH_SIZE = 6">6</button>
-          <button onclick="window.BRUSH_SIZE = 10">10</button>
-          <button onclick="window.BRUSH_SIZE = 15">15</button>
-          <button onclick="window.BRUSH_SIZE = 20">20</button>
+        <div id="brushSize" class="button-container">
+          <button onclick="changeBrushSize(3, this)">3</button>
+          <button onclick="changeBrushSize(6, this)">6</button>
+          <button class="selected" onclick="changeBrushSize(10, this)">10</button>
+          <button onclick="changeBrushSize(15, this)">15</button>
+          <button onclick="changeBrushSize(20, this)">20</button>
         </div>
 
         <h3>Cell Size</h3>
-        <div class="button-container">
-          <button onclick="changeCellSize(3)">3</button>
-          <button onclick="changeCellSize(4)">4</button>
-          <button onclick="changeCellSize(7)">7</button>
-          <button onclick="changeCellSize(12)">12</button>
-          <button onclick="changeCellSize(18)">18</button>
+        <div id="cellSize" class="button-container">
+          <button onclick="changeCellSize(3, this)">3</button>
+          <button class="selected" onclick="changeCellSize(4, this)">4</button>
+          <button onclick="changeCellSize(7, this)">7</button>
+          <button onclick="changeCellSize(12, this)">12</button>
+          <button onclick="changeCellSize(18, this)">18</button>
         </div>
 
         <h3>Material</h3>
-        <div class="button-container">
-          <button onclick="window.MATERIAL = 1">SAND</button>
-          <button onclick="window.MATERIAL = 2">STONE</button>
-          <button onclick="window.MATERIAL = 3">WATER</button>
-          <button onclick="window.MATERIAL = 5">GAS</button>
+        <div id="material" class="button-container">
+          <button class="selected" onclick="changeMaterial(1, this)">SAND</button>
+          <button onclick="changeMaterial(2, this)">STONE</button>
+          <button onclick="changeMaterial(3, this)">WATER</button>
+          <button onclick="changeMaterial(5, this)">GAS</button>
+        </div>
+
+        <h3>Sim Speed</h3>
+        <div id="simSpeed" class="button-container">
+          <button class="selected" onclick="changeSimSpeed(1, this)">1/1</button>
+          <button onclick="changeSimSpeed(.2, this)">1/5</button>
+          <button onclick="changeSimSpeed(.1, this)">1/10</button>
+          <button onclick="changeSimSpeed(.04, this)">1/25</button>
+          <button onclick="changeSimSpeed(.02, this)">1/50</button>
         </div>
 
         <button class="big push" onclick="showFPS(this)">SHOW FPS</button>
@@ -149,9 +164,32 @@
         window.GRID.initCells(c.width, c.height, window.CELL_SIZE);
       }
 
-      function changeCellSize(size) {
+      function changeCellSize(size, btn) {
+        changeSelected(btn, "cellSize");
         window.CELL_SIZE = size;
         clearCanvas();
+      }
+
+      function changeMaterial(material, btn) {
+        window.MATERIAL = material;
+        changeSelected(btn, "material");
+      }
+
+      function changeBrushSize(size, btn) {
+        window.BRUSH_SIZE = size;
+        changeSelected(btn, "brushSize");
+      }
+
+      function changeSimSpeed(factor, btn) {
+        window.SIM_SPEED = factor;
+        changeSelected(btn, "simSpeed");
+      }
+
+      function changeSelected(btn, container) {
+        Array.from(document.getElementById(container).children).forEach((e) =>
+          e.classList.remove("selected")
+        );
+        btn.classList.add("selected");
       }
     </script>
   </body>

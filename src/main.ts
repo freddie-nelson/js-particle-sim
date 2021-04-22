@@ -1,20 +1,24 @@
 // setup globals
 declare global {
   interface Window {
+    CURRENT_FRAME: number;
     GRID: Grid;
     BRUSH_SIZE: number;
     PAUSE: boolean;
     SHOW_FPS: boolean;
     CELL_SIZE: number;
     MATERIAL: CellState;
+    SIM_SPEED: number;
   }
 }
 
+window.CURRENT_FRAME = 0;
 window.BRUSH_SIZE = 10;
 window.PAUSE = false;
 window.SHOW_FPS = false;
 window.CELL_SIZE = 4;
 window.MATERIAL = 1;
+window.SIM_SPEED = 1;
 
 import Grid from "./Grid";
 import { CellState } from "./Cell";
@@ -48,7 +52,7 @@ const loop = () => {
   if (GRID === undefined) return;
 
   // simulate particles
-  if (!window.PAUSE) GRID.update();
+  if (!window.PAUSE && window.CURRENT_FRAME % (1 / window.SIM_SPEED) === 0) GRID.update();
 
   // draw
   ctx.fillStyle = "black";
@@ -141,8 +145,8 @@ setInterval(() => {
   delta = Date.now() - lastFrameTime;
   lastFrameTime = Date.now();
 
-  // CURRENT_FRAME++;
-  // if (CURRENT_FRAME > MAX_FPS) CURRENT_FRAME = 0;
+  window.CURRENT_FRAME++;
+  if (window.CURRENT_FRAME > MAX_FPS) window.CURRENT_FRAME = 0;
 
   // try to paint circle
   paintCircle();
