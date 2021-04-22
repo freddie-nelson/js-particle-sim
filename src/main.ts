@@ -81,7 +81,7 @@ const loop = () => {
               ctx.fillStyle = "#4b8aae";
               break;
             case CellState.Gas:
-              ctx.fillStyle = "#595957";
+              ctx.fillStyle = "#7EA09B";
               break;
             default:
               ctx.fillStyle = "";

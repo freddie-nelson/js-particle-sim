@@ -1,19 +1,7 @@
 import Cell, { CellState } from "./Cell";
-
-export interface Neighbours {
-  [index: string]: Cell;
-  top?: Cell;
-  bottom?: Cell;
-  right?: Cell;
-  left?: Cell;
-  bRight?: Cell;
-  tRight?: Cell;
-  bLeft?: Cell;
-  tLeft?: Cell;
-}
+import Neighbours from "./Neighbours";
 
 import useUpdaters from "./Updaters";
-
 // get updaters type
 const dummy = (false as true) && useUpdaters(undefined);
 let updaters: typeof dummy;
@@ -111,7 +99,7 @@ export default class Grid {
           updatedPos = updaters.gas(y, x);
           break;
         default:
-          break;
+          return;
       }
 
       if (this.cells[updatedPos.y][updatedPos.x].static) {
@@ -126,52 +114,6 @@ export default class Grid {
     for (let i = 0; i < this.updated.length; i++) {
       this.updated[i] = 0;
     }
-  }
-
-  getNeighbours(y: number, x: number): Neighbours {
-    const neighbours: Neighbours = {};
-
-    // right
-    let right = false;
-    if (this.isInGrid(y, x + 1)) {
-      neighbours.right = this.cells[y][x + 1];
-      right = true;
-    }
-
-    // left
-    let left = false;
-    if (this.isInGrid(y, x - 1)) {
-      neighbours.left = this.cells[y][x - 1];
-      left = true;
-    }
-
-    // top
-    if (this.isInGrid(y - 1, x)) {
-      neighbours.top = this.cells[y - 1][x];
-
-      // top right and left
-      if (right) {
-        neighbours.tRight = this.cells[y - 1][x + 1];
-      }
-      if (left) {
-        neighbours.tLeft = this.cells[y - 1][x - 1];
-      }
-    }
-
-    // bottom
-    if (this.isInGrid(y + 1, x)) {
-      neighbours.bottom = this.cells[y + 1][x];
-
-      // bottom right and left
-      if (right) {
-        neighbours.bRight = this.cells[y + 1][x + 1];
-      }
-      if (left) {
-        neighbours.bLeft = this.cells[y + 1][x - 1];
-      }
-    }
-
-    return neighbours;
   }
 
   emptyCell(cell: Cell, state: CellState = CellState.Empty) {
@@ -219,7 +161,7 @@ export default class Grid {
               const cell = this.cells[pos.y][pos.x];
               cell.state = state;
 
-              const neighbours = this.getNeighbours(pos.y, pos.x);
+              const neighbours = new Neighbours(this, pos.y, pos.x);
               Object.keys(neighbours).forEach((k) => (neighbours[k].static = false));
             }
           }

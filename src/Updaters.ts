@@ -1,9 +1,11 @@
 import Cell, { CellState } from "./Cell";
-import Grid, { Neighbours } from "./Grid";
+import Grid from "./Grid";
+import Neighbours from "./Neighbours";
 
 interface Position {
   y: number;
   x: number;
+  empty?: boolean;
 }
 
 export default function useUpdaters(GRID: Grid) {
@@ -19,7 +21,7 @@ export default function useUpdaters(GRID: Grid) {
     const currentV = cell.velocity;
     for (let i = 0; i < currentV; i++) {
       const last = GRID.cells[lastY][lastX];
-      const neighbours = GRID.getNeighbours(lastY, lastX);
+      const neighbours = new Neighbours(GRID, lastY, lastX);
 
       // calculate new position
       const newPos: Position = {
@@ -30,12 +32,18 @@ export default function useUpdaters(GRID: Grid) {
 
       const current = GRID.cells[newPos.y][newPos.x];
       if (current === undefined) break;
+
+      if (newPos.empty) {
+        GRID.emptyCell(current);
+        return newPos;
+      }
+
       lastY = newPos.y;
       lastX = newPos.x;
 
       // mark cell as static if hasn't moved this cycle
       // else mark all neighbours of last position as not static as space has opened
-      if (current === last) {
+      if (current === last && current.state !== CellState.Gas) {
         current.static = true;
         break;
       } else {
@@ -80,22 +88,22 @@ export default function useUpdaters(GRID: Grid) {
   };
 
   const water = (y: number, x: number): Position => {
-    return base(y, x, (last: Cell, neighbours: Neighbours, newPos: Position) => {
-      if (last.canPass(neighbours.bottom)) {
+    return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
+      if (cell.canPass(neighbours.bottom)) {
         // move down
         newPos.y++;
-      } else if (last.canPass(neighbours.bRight)) {
+      } else if (cell.canPass(neighbours.bRight)) {
         // move down right
         newPos.x++;
         newPos.y++;
-      } else if (last.canPass(neighbours.bLeft)) {
+      } else if (cell.canPass(neighbours.bLeft)) {
         // move down left
         newPos.x--;
         newPos.y++;
-      } else if (last.canPass(neighbours.right)) {
+      } else if (cell.canPass(neighbours.right)) {
         // move right
         newPos.x++;
-      } else if (last.canPass(neighbours.left)) {
+      } else if (cell.canPass(neighbours.left)) {
         // move left
         newPos.x--;
       }
@@ -103,24 +111,25 @@ export default function useUpdaters(GRID: Grid) {
   };
 
   const gas = (y: number, x: number): Position => {
-    return base(y, x, (last: Cell, neighbours: Neighbours, newPos: Position) => {
-      if (last.canPass(neighbours.top)) {
-        // move up
-        newPos.y--;
-      } else if (last.canPass(neighbours.tRight)) {
-        // move up right
-        newPos.x++;
-        newPos.y--;
-      } else if (last.canPass(neighbours.tLeft)) {
-        // move up left
-        newPos.x--;
-        newPos.y--;
-      } else if (last.canPass(neighbours.right)) {
-        // move right
-        newPos.x++;
-      } else if (last.canPass(neighbours.left)) {
-        // move left
-        newPos.x--;
+    return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
+      cell.velocity = 4;
+
+      // dissapate
+      if (Math.random() < 0.0004) {
+        newPos.empty = true;
+        return;
+      }
+
+      // get random pos
+      const nx = Math.floor(Math.random() * 3) - 1;
+      const ny = Math.floor(Math.random() * 3) - 1;
+      if (nx === 0 && ny === 0) return;
+
+      const n = neighbours.get(ny, nx);
+      if (cell.canPass(n) && GRID.isInGrid(newPos.y, newPos.x)) {
+        newPos.x += nx;
+        newPos.y += ny;
+        if (GRID.cells[newPos.y][newPos.x].state === CellState.Sand) console.log("passed sand");
       }
     });
   };

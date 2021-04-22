@@ -18,17 +18,17 @@ export default class Cell {
   }
 
   canPass(pass: Cell): boolean {
-    if (pass === undefined) return false;
+    if (!pass) return false;
 
     switch (this.state) {
       case CellState.Sand:
-        return pass.state === CellState.Empty || pass.state === CellState.Water;
-      case CellState.Water:
-        return pass.state === CellState.Empty;
-      case CellState.Gas:
         return (
-          pass.state === CellState.Empty || pass.state === CellState.Sand || pass.state === CellState.Water
+          pass.state === CellState.Empty || pass.state === CellState.Water || pass.state === CellState.Gas
         );
+      case CellState.Water:
+        return pass.state === CellState.Empty || pass.state === CellState.Gas;
+      case CellState.Gas:
+        return pass.state === CellState.Empty;
       default:
         return false;
     }
