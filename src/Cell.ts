@@ -5,6 +5,8 @@ export enum CellState {
   Water,
   Lava,
   Gas,
+  Wood,
+  Fire,
   Boundary,
 }
 
@@ -32,5 +34,16 @@ export default class Cell {
       default:
         return false;
     }
+  }
+
+  flammable(): number {
+    switch (this.state) {
+      case CellState.Gas:
+        return 0.1;
+      case CellState.Wood:
+        return 0.005;
+    }
+
+    return 0;
   }
 }

@@ -57,6 +57,7 @@
         display: flex;
         justify-content: space-between;
         margin-top: 8px;
+        flex-wrap: wrap;
       }
 
       button {
@@ -128,8 +129,11 @@
           <button onclick="changeMaterial(0, this)">ERASE</button>
           <button class="selected" onclick="changeMaterial(1, this)">SAND</button>
           <button onclick="changeMaterial(2, this)">STONE</button>
+          <button onclick="changeMaterial(6, this)">WOOD</button>
           <button onclick="changeMaterial(3, this)">WATER</button>
-          <button onclick="changeMaterial(5, this)">GAS</button>
+          <button style="margin-top: 10px" onclick="changeMaterial(4, this)">LAVA</button>
+          <button style="margin-top: 10px" onclick="changeMaterial(5, this)">GAS</button>
+          <button style="margin-top: 10px" onclick="changeMaterial(7, this)">FIRE</button>
         </div>
 
         <h3>Sim Speed</h3>
