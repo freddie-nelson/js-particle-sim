@@ -133,6 +133,8 @@ export default function useUpdaters(GRID: Grid) {
           newPos.x = x;
           newPos.change = CellState.Rock;
           break;
+        } else if (n.state === CellState.Fire) {
+          n.state = CellState.Empty;
         }
       }
     });
@@ -264,6 +266,10 @@ export default function useUpdaters(GRID: Grid) {
 
       for (const k of Object.keys(neighbours)) {
         const n = neighbours[k];
+
+        if (n.state === CellState.Water) {
+          n.state = CellState.Empty;
+        }
 
         // light flammable neighbours
         if (n.flammable()) {
