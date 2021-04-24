@@ -97,6 +97,10 @@ const loop = () => {
               break;
             case CellState.Glass:
               ctx.fillStyle = "#969480";
+              break;
+            case CellState.Acid:
+              ctx.fillStyle = "#B6F20E";
+              break;
             default:
               break;
           }

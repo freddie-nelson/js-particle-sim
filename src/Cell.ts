@@ -9,6 +9,7 @@ export enum CellState {
   Fire,
   Rock,
   Glass,
+  Acid,
   Boundary,
 }
 
@@ -51,6 +52,8 @@ export default class Cell {
           pass.state === CellState.Gas ||
           pass.state === CellState.Fire
         );
+      case CellState.Acid:
+        return pass.state === CellState.Empty;
       default:
         return false;
     }

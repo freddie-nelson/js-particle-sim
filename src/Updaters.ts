@@ -6,6 +6,7 @@ interface Position {
   y: number;
   x: number;
   change?: CellState;
+  noStatic?: boolean;
 }
 
 export default function useUpdaters(GRID: Grid) {
@@ -44,7 +45,7 @@ export default function useUpdaters(GRID: Grid) {
       // mark cell as static if hasn't moved this cycle
       // else mark all neighbours of last position as not static as space has opened
       if (current === last && !(current.state === CellState.Gas || current.state === CellState.Fire)) {
-        current.static = true;
+        if (!newPos.noStatic) current.static = true;
         break;
       } else {
         current.static = false;
@@ -281,6 +282,49 @@ export default function useUpdaters(GRID: Grid) {
     });
   };
 
+  const acid = (y: number, x: number): Position => {
+    return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
+      if (cell.canPass(neighbours.bottom)) {
+        // move down
+        newPos.y++;
+      } else if (cell.canPass(neighbours.bRight)) {
+        // move down right
+        newPos.x++;
+        newPos.y++;
+      } else if (cell.canPass(neighbours.bLeft)) {
+        // move down left
+        newPos.x--;
+        newPos.y++;
+      } else if (cell.canPass(neighbours.right)) {
+        // move right
+        newPos.x++;
+      } else if (cell.canPass(neighbours.left)) {
+        // move left
+        newPos.x--;
+      }
+
+      for (const k of Object.keys(neighbours)) {
+        const n = neighbours[k];
+
+        // state changes
+        if (n.state !== CellState.Empty && n.state !== CellState.Acid) {
+          const destroy = Math.random() > 0.99;
+          if (!destroy) {
+            newPos.noStatic = true;
+            break;
+          }
+
+          GRID.emptyCell(n);
+
+          newPos.y = y;
+          newPos.x = x;
+          newPos.change = CellState.Empty;
+          break;
+        }
+      }
+    });
+  };
+
   return {
     sand,
     water,
@@ -288,5 +332,6 @@ export default function useUpdaters(GRID: Grid) {
     gas,
     fire,
     rock,
+    acid,
   };
 }
