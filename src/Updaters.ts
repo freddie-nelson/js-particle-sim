@@ -136,13 +136,20 @@ export default function useUpdaters(GRID: Grid) {
       for (const k of Object.keys(neighbours)) {
         const n = neighbours[k];
 
-        // if in contact with water turn to rock
+        // state changes
         if (n.state === CellState.Water) {
           GRID.emptyCell(n);
 
           newPos.y = y;
           newPos.x = x;
           newPos.change = CellState.Rock;
+          break;
+        } else if (n.state === CellState.Sand) {
+          GRID.emptyCell(n);
+
+          newPos.y = y;
+          newPos.x = x;
+          newPos.change = CellState.Glass;
           break;
         }
       }

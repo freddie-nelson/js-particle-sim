@@ -95,6 +95,8 @@ const loop = () => {
             case CellState.Rock:
               ctx.fillStyle = "#696B72";
               break;
+            case CellState.Glass:
+              ctx.fillStyle = "#969480";
             default:
               break;
           }

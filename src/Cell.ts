@@ -8,6 +8,7 @@ export enum CellState {
   Wood,
   Fire,
   Rock,
+  Glass,
   Boundary,
 }
 
