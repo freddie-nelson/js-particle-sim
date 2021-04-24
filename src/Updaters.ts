@@ -43,7 +43,7 @@ export default function useUpdaters(GRID: Grid) {
 
       // mark cell as static if hasn't moved this cycle
       // else mark all neighbours of last position as not static as space has opened
-      if (current === last && current.state !== CellState.Gas) {
+      if (current === last && !(current.state === CellState.Gas || current.state === CellState.Fire)) {
         current.static = true;
         break;
       } else {
@@ -235,11 +235,45 @@ export default function useUpdaters(GRID: Grid) {
     });
   };
 
+  const fire = (y: number, x: number): Position => {
+    return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
+      cell.velocity = 1;
+
+      // dissapate
+      if (Math.random() < 0.03) {
+        newPos.change = CellState.Empty;
+        return;
+      }
+
+      // get random pos
+      const nx = Math.floor(Math.random() * 3) - 1;
+      const ny = Math.floor(Math.random() * 2) - 1;
+
+      const n = neighbours.get(ny, nx);
+      if (cell.canPass(n) && GRID.isInGrid(newPos.y + nx, newPos.x + ny)) {
+        newPos.x += nx;
+        newPos.y += ny;
+      }
+
+      for (const k of Object.keys(neighbours)) {
+        const n = neighbours[k];
+
+        // light flammable neighbours
+        if (n.flammable()) {
+          if (Math.random() < n.flammable()) {
+            n.state = CellState.Fire;
+          }
+        }
+      }
+    });
+  };
+
   return {
     sand,
     water,
     lava,
     gas,
+    fire,
     rock,
   };
 }

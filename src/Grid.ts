@@ -104,6 +104,9 @@ export default class Grid {
         case CellState.Gas:
           updatedPos = updaters.gas(y, x);
           break;
+        case CellState.Fire:
+          updatedPos = updaters.fire(y, x);
+          break;
         default:
           return;
       }

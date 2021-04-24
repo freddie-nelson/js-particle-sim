@@ -27,19 +27,29 @@ export default class Cell {
     switch (this.state) {
       case CellState.Sand:
         return (
-          pass.state === CellState.Empty || pass.state === CellState.Water || pass.state === CellState.Gas
+          pass.state === CellState.Empty ||
+          pass.state === CellState.Water ||
+          pass.state === CellState.Gas ||
+          pass.state === CellState.Fire
         );
       case CellState.Water:
-        return pass.state === CellState.Empty || pass.state === CellState.Gas;
+        return (
+          pass.state === CellState.Empty || pass.state === CellState.Gas || pass.state === CellState.Fire
+        );
       case CellState.Gas:
-        return pass.state === CellState.Empty;
+        return pass.state === CellState.Empty || pass.state === CellState.Fire;
       case CellState.Lava:
-        return pass.state === CellState.Empty || pass.state === CellState.Gas;
+        return (
+          pass.state === CellState.Empty || pass.state === CellState.Gas || pass.state === CellState.Fire
+        );
       case CellState.Fire:
         return pass.state === CellState.Empty;
       case CellState.Rock:
         return (
-          pass.state === CellState.Empty || pass.state === CellState.Water || pass.state === CellState.Gas
+          pass.state === CellState.Empty ||
+          pass.state === CellState.Water ||
+          pass.state === CellState.Gas ||
+          pass.state === CellState.Fire
         );
       default:
         return false;
@@ -49,9 +59,9 @@ export default class Cell {
   flammable(): number {
     switch (this.state) {
       case CellState.Gas:
-        return 0.1;
+        return 0.6;
       case CellState.Wood:
-        return 0.005;
+        return 0.008;
     }
 
     return 0;
