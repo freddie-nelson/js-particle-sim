@@ -95,6 +95,12 @@ export default class Grid {
         case CellState.Water:
           updatedPos = updaters.water(y, x);
           break;
+        case CellState.Lava:
+          updatedPos = updaters.lava(y, x);
+          break;
+        case CellState.Rock:
+          updatedPos = updaters.rock(y, x);
+          break;
         case CellState.Gas:
           updatedPos = updaters.gas(y, x);
           break;

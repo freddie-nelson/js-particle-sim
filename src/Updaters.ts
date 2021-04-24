@@ -5,7 +5,7 @@ import Neighbours from "./Neighbours";
 interface Position {
   y: number;
   x: number;
-  empty?: boolean;
+  change?: CellState;
 }
 
 export default function useUpdaters(GRID: Grid) {
@@ -33,8 +33,8 @@ export default function useUpdaters(GRID: Grid) {
       const current = GRID.cells[newPos.y][newPos.x];
       if (current === undefined) break;
 
-      if (newPos.empty) {
-        GRID.emptyCell(current);
+      if (newPos.change !== undefined) {
+        GRID.emptyCell(current, newPos.change);
         return newPos;
       }
 
@@ -110,13 +110,56 @@ export default function useUpdaters(GRID: Grid) {
     });
   };
 
+  const lava = (y: number, x: number): Position => {
+    return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
+      cell.velocity = 2;
+
+      if (cell.canPass(neighbours.bottom)) {
+        // move down
+        newPos.y++;
+      } else if (cell.canPass(neighbours.bRight)) {
+        // move down right
+        newPos.x++;
+        newPos.y++;
+      } else if (cell.canPass(neighbours.bLeft)) {
+        // move down left
+        newPos.x--;
+        newPos.y++;
+      } else if (cell.canPass(neighbours.right)) {
+        // move right
+        newPos.x++;
+      } else if (cell.canPass(neighbours.left)) {
+        // move left
+        newPos.x--;
+      }
+
+      for (const k of Object.keys(neighbours)) {
+        const n = neighbours[k];
+
+        // if in contact with water turn to rock
+        if (n.state === CellState.Water) {
+          GRID.emptyCell(n);
+
+          newPos.y = y;
+          newPos.x = x;
+          newPos.change = CellState.Rock;
+          break;
+        }
+      }
+    });
+  };
+
+  const rock = (y: number, x: number): Position => {
+    return sand(y, x);
+  };
+
   const gas = (y: number, x: number): Position => {
     return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
       cell.velocity = 4;
 
       // dissapate
       if (Math.random() < 0.0004) {
-        newPos.empty = true;
+        newPos.change = CellState.Empty;
         return;
       }
 
@@ -136,6 +179,8 @@ export default function useUpdaters(GRID: Grid) {
   return {
     sand,
     water,
+    lava,
     gas,
+    rock,
   };
 }
