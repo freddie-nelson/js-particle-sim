@@ -84,6 +84,20 @@ export default function useUpdaters(GRID: Grid) {
         if (cell.velocity >= 8) cell.velocity = 8;
         if (cell.velocity <= 2) cell.velocity = 2;
       }
+
+      for (const k of Object.keys(neighbours)) {
+        const n = neighbours[k];
+
+        // state changes
+        if (n.state === CellState.Lava) {
+          GRID.emptyCell(n);
+
+          newPos.y = y;
+          newPos.x = x;
+          newPos.change = CellState.Glass;
+          break;
+        }
+      }
     });
   };
 
@@ -106,6 +120,20 @@ export default function useUpdaters(GRID: Grid) {
       } else if (cell.canPass(neighbours.left)) {
         // move left
         newPos.x--;
+      }
+
+      for (const k of Object.keys(neighbours)) {
+        const n = neighbours[k];
+
+        // state changes
+        if (n.state === CellState.Lava) {
+          GRID.emptyCell(n);
+
+          newPos.y = y;
+          newPos.x = x;
+          newPos.change = CellState.Rock;
+          break;
+        }
       }
     });
   };
@@ -157,7 +185,31 @@ export default function useUpdaters(GRID: Grid) {
   };
 
   const rock = (y: number, x: number): Position => {
-    return sand(y, x);
+    return base(y, x, (cell, neighbours, newPos) => {
+      let picked: Cell;
+      if (cell.canPass(neighbours.bottom)) {
+        // move down
+        newPos.y++;
+        picked = neighbours.bottom;
+      } else if (cell.canPass(neighbours.bRight)) {
+        // move down right
+        newPos.x++;
+        newPos.y++;
+        picked = neighbours.bRight;
+      } else if (cell.canPass(neighbours.bLeft)) {
+        // move down left
+        newPos.x--;
+        newPos.y++;
+        picked = neighbours.bLeft;
+      }
+
+      // slow sand down if it is in water
+      if (picked && picked.state === CellState.Water) {
+        cell.velocity -= 0.6;
+        if (cell.velocity >= 8) cell.velocity = 8;
+        if (cell.velocity <= 2) cell.velocity = 2;
+      }
+    });
   };
 
   const gas = (y: number, x: number): Position => {
