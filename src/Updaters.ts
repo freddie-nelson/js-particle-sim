@@ -180,6 +180,13 @@ export default function useUpdaters(GRID: Grid) {
           newPos.change = CellState.Glass;
           break;
         }
+
+        // light flammable neighbours
+        if (n.flammable()) {
+          if (Math.random() < n.flammable()) {
+            n.state = CellState.Fire;
+          }
+        }
       }
     });
   };
