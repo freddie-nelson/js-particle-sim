@@ -10,6 +10,7 @@ export enum CellState {
   Rock,
   Glass,
   Acid,
+  FlamingMaterial,
   Boundary,
 }
 

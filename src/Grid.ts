@@ -110,6 +110,9 @@ export default class Grid {
         case CellState.Acid:
           updatedPos = updaters.acid(y, x);
           break;
+        case CellState.FlamingMaterial:
+          updatedPos = updaters.flamingMaterial(y, x);
+          break;
         default:
           return;
       }

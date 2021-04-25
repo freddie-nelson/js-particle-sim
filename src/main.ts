@@ -101,6 +101,9 @@ const loop = () => {
             case CellState.Acid:
               ctx.fillStyle = "#B6F20E";
               break;
+            case CellState.FlamingMaterial:
+              ctx.fillStyle = "#e84b07";
+              break;
             default:
               break;
           }

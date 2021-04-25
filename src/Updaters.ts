@@ -44,7 +44,14 @@ export default function useUpdaters(GRID: Grid) {
 
       // mark cell as static if hasn't moved this cycle
       // else mark all neighbours of last position as not static as space has opened
-      if (current === last && !(current.state === CellState.Gas || current.state === CellState.Fire)) {
+      if (
+        current === last &&
+        !(
+          current.state === CellState.Gas ||
+          current.state === CellState.Fire ||
+          current.state === CellState.FlamingMaterial
+        )
+      ) {
         if (!newPos.noStatic) current.static = true;
         break;
       } else {
@@ -275,8 +282,35 @@ export default function useUpdaters(GRID: Grid) {
         // light flammable neighbours
         if (n.flammable()) {
           if (Math.random() < n.flammable()) {
-            n.state = CellState.Fire;
+            if (n.state === CellState.Gas) n.state = CellState.Fire;
+            else n.state = CellState.FlamingMaterial;
           }
+        }
+      }
+    });
+  };
+
+  const flamingMaterial = (y: number, x: number): Position => {
+    return base(y, x, (cell: Cell, neighbours: Neighbours, newPos: Position) => {
+      cell.velocity = 1;
+
+      // dissapate
+      if (Math.random() < 0.005) {
+        newPos.change = CellState.Empty;
+        return;
+      }
+
+      for (const k of Object.keys(neighbours)) {
+        const n = neighbours[k];
+
+        if (n.state === CellState.Water) {
+          // try distinguish
+          n.state = CellState.Empty;
+        } else if (n.state === CellState.Empty && Math.random() < 0.02) {
+          // light air
+          n.state = CellState.Fire;
+        } else if (n.flammable() && Math.random() < 0.0001) {
+          n.state = CellState.FlamingMaterial;
         }
       }
     });
@@ -333,5 +367,6 @@ export default function useUpdaters(GRID: Grid) {
     fire,
     rock,
     acid,
+    flamingMaterial,
   };
 }
