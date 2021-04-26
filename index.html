@@ -31,6 +31,11 @@
         padding: 10px;
         display: flex;
         flex-direction: column;
+        overflow-y: scroll;
+      }
+
+      .controls::-webkit-scrollbar {
+        width: 0px;
       }
 
       .title {
@@ -89,10 +94,15 @@
       button.big {
         width: 100%;
         margin-top: 8px;
+        padding: 16px 0;
       }
 
       button.push {
         margin-top: auto;
+      }
+
+      .seperator {
+        margin-top: 40px;
       }
     </style>
   </head>
@@ -145,6 +155,8 @@
           <button onclick="changeSimSpeed(.04, this)">1/25</button>
           <button onclick="changeSimSpeed(.02, this)">1/50</button>
         </div>
+
+        <div class="seperator"></div>
 
         <button class="big push" onclick="showFPS(this)">SHOW FPS</button>
         <button class="big" onclick="pauseSim(this)">PAUSE</button>
