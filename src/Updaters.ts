@@ -309,7 +309,7 @@ export default function useUpdaters(GRID: Grid) {
         } else if (n.state === CellState.Empty && Math.random() < 0.02) {
           // light air
           n.state = CellState.Fire;
-        } else if (n.flammable() && Math.random() < 0.0001) {
+        } else if (n.flammable() && Math.random() < 0.0005) {
           n.state = CellState.FlamingMaterial;
         }
       }

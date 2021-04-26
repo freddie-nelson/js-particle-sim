@@ -33,7 +33,25 @@ c.addEventListener("mousemove", (e: MouseEvent) => {
   MOUSE_Y = e.clientY;
 });
 window.addEventListener("mousemove", (e: MouseEvent) => {
-  if (e.pageX > MOUSE_X || e.pageY > MOUSE_Y) isMouseDown = false;
+  if (e.pageX > MOUSE_X || e.pageY > MOUSE_Y || e.pageX < 0) isMouseDown = false;
+});
+
+// mobile
+c.addEventListener("touchstart", (e: TouchEvent) => {
+  isMouseDown = true;
+  MOUSE_X = e.touches[0].pageX;
+  MOUSE_Y = e.touches[0].pageY;
+});
+c.addEventListener("touchend", () => {
+  isMouseDown = false;
+});
+c.addEventListener("touchmove", (e: TouchEvent) => {
+  MOUSE_X = e.touches[0].pageX;
+  MOUSE_Y = e.touches[0].pageY;
+});
+window.addEventListener("touchmove", (e: TouchEvent) => {
+  if (e.touches[0].pageX > MOUSE_X || e.touches[0].pageY > MOUSE_Y || e.touches[0].pageX < 0)
+    isMouseDown = false;
 });
 
 export function usePaintBrush(GRID: Grid) {
