@@ -172,9 +172,16 @@
       }
 
       function showFPS(btn) {
-        window.SHOW_FPS = !window.SHOW_FPS;
-        if (window.SHOW_FPS) btn.innerText = "HIDE FPS";
-        else btn.innerText = "SHOW FPS";
+        const fpsElement = document.getElementById("fps");
+        if (!fpsElement) return;
+
+        if (fpsElement.hidden) {
+          fpsElement.hidden = false;
+          btn.innerText = "HIDE FPS";
+        } else {
+          fpsElement.hidden = true;
+          btn.innerText = "SHOW FPS";
+        }
       }
 
       function clearCanvas() {

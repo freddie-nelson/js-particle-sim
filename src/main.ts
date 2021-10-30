@@ -47,119 +47,34 @@ window.addEventListener("resize", () => {
 //   c.height = window.innerHeight;
 // });
 
-// main update and draw loop
-const loop = () => {
+const update = () => {
   if (GRID === undefined) return;
 
   // simulate particles
   if (!window.PAUSE && window.CURRENT_FRAME % (1 / window.SIM_SPEED) === 0) GRID.update();
-
-  // draw
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, c.width, c.height);
-
-  let lastState: CellState;
-  let stateChangeMarker: number;
-  GRID.everyCell(
-    (y, x, lastX) => {
-      const cell = GRID.cells[y][x];
-
-      if (stateChangeMarker === null) {
-        stateChangeMarker = x;
-      }
-
-      if (cell.state !== lastState) {
-        if (lastState !== CellState.Empty && lastState !== CellState.Boundary) {
-          switch (lastState) {
-            case CellState.Sand:
-              ctx.fillStyle = "#624f21";
-              break;
-            case CellState.Stone:
-              ctx.fillStyle = "#3b3b39";
-              break;
-            case CellState.Water:
-              ctx.fillStyle = "#4b8aae";
-              break;
-            case CellState.Gas:
-              ctx.fillStyle = "#7EA09B";
-              break;
-            case CellState.Wood:
-              ctx.fillStyle = "#402718";
-              break;
-            case CellState.Lava:
-              ctx.fillStyle = "#d63615";
-              break;
-            case CellState.Fire:
-              ctx.fillStyle = "#E86B07";
-              break;
-            case CellState.Rock:
-              ctx.fillStyle = "#696B72";
-              break;
-            case CellState.Glass:
-              ctx.fillStyle = "#969480";
-              break;
-            case CellState.Acid:
-              ctx.fillStyle = "#B6F20E";
-              break;
-            case CellState.FlamingMaterial:
-              ctx.fillStyle = "#e84b07";
-              break;
-            default:
-              break;
-          }
-
-          // calculate fixed drawing values due to alternating looping directions
-          const even = y % 2 === 0;
-          const fixedMarker = even ? stateChangeMarker : stateChangeMarker + 1;
-          let diff = x - stateChangeMarker;
-
-          if (x === lastX) {
-            if (even) diff++;
-            else diff--;
-          }
-
-          ctx.fillRect(
-            fixedMarker * window.CELL_SIZE,
-            y * window.CELL_SIZE,
-            window.CELL_SIZE * diff,
-            window.CELL_SIZE
-          );
-        }
-
-        stateChangeMarker = x;
-        lastState = cell.state;
-      }
-
-      // draw debug cells
-      // if (cell.state !== CellState.Empty && cell.state !== CellState.Boundary) {
-      //   y % 2 === 0 ? (ctx.strokeStyle = "green") : (ctx.strokeStyle = "pink");
-      //   ctx.strokeRect(x * window.CELL_SIZE, y * window.CELL_SIZE, window.CELL_SIZE, window.CELL_SIZE);
-      //   ctx.strokeStyle = "";
-      // }
-    },
-    () => {
-      lastState = CellState.Empty;
-      stateChangeMarker = null;
-    },
-    true
-  );
-
-  // draw boundary
-  ctx.strokeStyle = "grey";
-  ctx.lineWidth = window.CELL_SIZE;
-  const halfSize = window.CELL_SIZE / 2;
-  ctx.strokeRect(halfSize, halfSize, c.width - window.CELL_SIZE, c.height - window.CELL_SIZE);
-  ctx.lineWidth = 1;
 };
 
 import { usePaintBrush } from "./input";
+import { greedyMesh, linearGreedyMesh } from "./drawing";
 const { paintCircle } = usePaintBrush(GRID);
 
-// draw and update ticker
+// update loop
 let lastFrameTime = Date.now();
 let delta: number;
-const MAX_FPS = 200;
+const MAX_FPS = 250;
 const desiredDelta = Math.ceil(1000 / MAX_FPS);
+
+const fpsElement = document.createElement("span");
+fpsElement.id = "fps";
+fpsElement.style.width = "100px";
+fpsElement.style.font = "18px Arial";
+fpsElement.style.color = "white";
+fpsElement.style.position = "absolute";
+fpsElement.style.top = "10px";
+fpsElement.style.left = "10px";
+fpsElement.style.userSelect = "none";
+fpsElement.style.pointerEvents = "none";
+document.body.appendChild(fpsElement);
 
 setInterval(() => {
   delta = Date.now() - lastFrameTime;
@@ -171,11 +86,44 @@ setInterval(() => {
   // try to paint circle
   paintCircle();
 
-  loop();
+  update();
 
-  if (window.SHOW_FPS) {
-    ctx.font = "18px Arial";
-    ctx.fillStyle = "white";
-    ctx.fillText(String(Math.round(1000 / delta)), 10, 22);
+  if (!fpsElement.hidden) {
+    fpsElement.textContent = String(Math.round(1000 / delta));
   }
 }, desiredDelta);
+
+// drawing
+const colors: { [index: number]: string } = {
+  [CellState.Boundary]: "gray",
+  [CellState.Sand]: "#624f21",
+  [CellState.Stone]: "#3b3b39",
+  [CellState.Water]: "#4b8aae",
+  [CellState.Gas]: "#7EA09B",
+  [CellState.Wood]: "#402718",
+  [CellState.Lava]: "#d63615",
+  [CellState.Fire]: "#E86B07",
+  [CellState.Rock]: "#696B72",
+  [CellState.Glass]: "#969480",
+  [CellState.Acid]: "#B6F20E",
+  [CellState.FlamingMaterial]: "#e84b07",
+};
+
+const draw = () => {
+  requestAnimationFrame(draw);
+  if (GRID === undefined) return;
+
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  linearGreedyMesh(ctx, colors);
+
+  // draw boundary
+  ctx.strokeStyle = "grey";
+  ctx.lineWidth = window.CELL_SIZE;
+  const halfSize = window.CELL_SIZE / 2;
+  ctx.strokeRect(halfSize, halfSize, c.width - window.CELL_SIZE, c.height - window.CELL_SIZE);
+  ctx.lineWidth = 1;
+};
+
+draw();

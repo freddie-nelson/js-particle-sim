@@ -25,36 +25,23 @@ export default class Cell {
 
   canPass(pass: Cell): boolean {
     if (!pass) return false;
+    else if (pass.state === CellState.Empty) return true;
 
     switch (this.state) {
       case CellState.Sand:
         return (
-          pass.state === CellState.Empty ||
-          pass.state === CellState.Water ||
-          pass.state === CellState.Gas ||
-          pass.state === CellState.Fire
+          pass.state === CellState.Water || pass.state === CellState.Gas || pass.state === CellState.Fire
         );
       case CellState.Water:
-        return (
-          pass.state === CellState.Empty || pass.state === CellState.Gas || pass.state === CellState.Fire
-        );
+        return pass.state === CellState.Gas || pass.state === CellState.Fire;
       case CellState.Gas:
-        return pass.state === CellState.Empty || pass.state === CellState.Fire;
+        return pass.state === CellState.Fire;
       case CellState.Lava:
-        return (
-          pass.state === CellState.Empty || pass.state === CellState.Gas || pass.state === CellState.Fire
-        );
-      case CellState.Fire:
-        return pass.state === CellState.Empty;
+        return pass.state === CellState.Gas || pass.state === CellState.Fire;
       case CellState.Rock:
         return (
-          pass.state === CellState.Empty ||
-          pass.state === CellState.Water ||
-          pass.state === CellState.Gas ||
-          pass.state === CellState.Fire
+          pass.state === CellState.Water || pass.state === CellState.Gas || pass.state === CellState.Fire
         );
-      case CellState.Acid:
-        return pass.state === CellState.Empty;
       default:
         return false;
     }
